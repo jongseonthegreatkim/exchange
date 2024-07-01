@@ -74,7 +74,7 @@ class _GetInfoState extends State<GetInfo> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "아이디는 필수 입력 필드입니다!";
+                        return "아이디는 입력 해주셔야 해요ㅜ";
                       }
                       return null;
                     },
@@ -148,6 +148,7 @@ class UniversityDropdown extends StatefulWidget {
 
 class _UniversityDropdownState extends State<UniversityDropdown> {
   List<String> universityNames = [];
+  List<String> filteredUniversityNames = [];
   bool isLoading = true;
   final FocusNode _focusNode = FocusNode();
 
@@ -171,14 +172,24 @@ class _UniversityDropdownState extends State<UniversityDropdown> {
       List<String> names = await fetchUniversityKeys();
       setState(() {
         universityNames = names;
+        filteredUniversityNames = names; // Initially, all names are shown
         isLoading = false;
       });
     } catch (e) {
+      print('Error" $e');
       // Handle any errors here
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  void _filterUniversities(String query) {
+    setState(() {
+      filteredUniversityNames = universityNames
+          .where((university) => university.contains(query))
+          .toList();
+    });
   }
 
   @override
@@ -188,8 +199,6 @@ class _UniversityDropdownState extends State<UniversityDropdown> {
         TextFormField(
           controller: widget.controller, // _universityController
           focusNode: _focusNode,
-          onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
-          readOnly: true, // make user not to type any random university name. Rather make them to pick between my offer.
           decoration: InputDecoration(
             hintText: "재학 중인 대학교를 선택해주세요",
             isDense: true,
@@ -197,23 +206,24 @@ class _UniversityDropdownState extends State<UniversityDropdown> {
             enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
             focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: conceptColor)),
           ),
+          onChanged: _filterUniversities, // Filter as the user types (=something changes in TextFormField)
           onTap: () {
-            // Show the drop-down menu when the field is tapped
+            // When the field is tapped -> Give focus -> Show the drop-down menu
             setState(() {
               _focusNode.requestFocus(); // Ensure the drop-down shows up
             });
           },
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return "재학 중인 대학교는 필수 입력 필드입니다!";
+              return "재학 중인 대학교는 입력 해주셔야 해요ㅜ";
             }
             if(!universityNames.contains(value)) {
-              return "재학 중인 대학교는 필수 입력 필드입니다!";
+              return "재학 중인 대학교는 입력 해주셔야 해요ㅜ";
             }
             return null;
           },
         ),
-        if (_focusNode.hasFocus && !isLoading)...[
+        if (_focusNode.hasFocus && !isLoading && filteredUniversityNames.isNotEmpty)...[
           Container(
             margin: EdgeInsets.only(top: 10),
             constraints: BoxConstraints(maxHeight: 200),
@@ -223,14 +233,14 @@ class _UniversityDropdownState extends State<UniversityDropdown> {
             ),
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: universityNames.length,
+              itemCount: filteredUniversityNames.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(universityNames[index]),
+                  title: Text(filteredUniversityNames[index]),
                   visualDensity: VisualDensity(vertical: -3),
                   contentPadding: EdgeInsets.only(left: 10),
                   onTap: () {
-                    widget.controller.text = universityNames[index];
+                    widget.controller.text = filteredUniversityNames[index];
                     _focusNode.unfocus(); // Dismiss the drop-down
                   },
                 );

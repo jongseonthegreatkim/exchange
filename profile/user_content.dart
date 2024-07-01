@@ -94,31 +94,33 @@ class _UserContentState extends State<UserContent> {
         color: conceptColor,
         backgroundColor: backgroundColor,
       ))
-      : SafeArea(
-        child: Expanded(
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _userContent.length,
-            itemBuilder: (context, index) {
-              var post = _userContent[index];
+      : Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _userContent.length,
+              itemBuilder: (context, index) {
+                var post = _userContent[index];
 
-              // Conditionally define title based on widget.isPost
-              String title;
-              if (widget.isPost) {
-                title = post['title'] ?? 'No Title';
-              } else {
-                title = _userRef[index]; // Use the parent post title from _userRef
-              }
+                // Conditionally define title based on widget.isPost
+                String title;
+                if (widget.isPost) {
+                  title = post['title'] ?? 'No Title';
+                } else {
+                  title = _userRef[index]; // Use the parent post title from _userRef
+                }
 
-              String content = post['content'] ?? 'No Content';
-              DateTime timestamp = (post['timestamp'] as Timestamp).toDate();
-              String userId = post['userId'] ?? 'Anonymous';
-              String documentId = post.id;
+                String content = post['content'] ?? 'No Content';
+                DateTime timestamp = (post['timestamp'] as Timestamp).toDate();
+                String userId = post['userId'] ?? 'Anonymous';
+                String documentId = post.id;
 
-              return _buildContentCard(title, content, timestamp, userId, documentId);
-            },
+                return _buildContentCard(title, content, timestamp, userId, documentId);
+              },
+            ),
           ),
-        )
+        ],
       ),
     );
   }
@@ -152,7 +154,7 @@ class _UserContentState extends State<UserContent> {
               maxLines: 2,
             ),
             SizedBox(height: 5),
-            Text(DateFormat('MM/dd hh:mm').format(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
+            Text(DateFormat('MM/dd HH:mm').format(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
           ],
         ),
       ),

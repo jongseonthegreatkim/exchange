@@ -19,7 +19,7 @@ class PostSubmissionScreen extends StatefulWidget {
 
 class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
 
-  double _pagePadding = 16;
+  double _pageMargin = 16;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
@@ -73,11 +73,11 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
               ),
             ),
           ),
-          SizedBox(width: _pagePadding),
+          SizedBox(width: _pageMargin),
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.all(_pagePadding),
+        padding: EdgeInsets.all(_pageMargin),
         child: Form(
           key: _formKey,
           child: Column(
@@ -99,7 +99,7 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              SizedBox(height: _pageMargin),
               TextFormField(
                 controller: _contentController,
                 onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),

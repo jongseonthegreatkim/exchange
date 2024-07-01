@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For user authentication
 import 'package:intl/intl.dart';
+import 'edit_post.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
 Color conceptColor = Color(0xFF73A9DA);
@@ -58,7 +59,28 @@ class _PostState extends State<Post> {
           // Only show edit and delete buttons if the user is the author
           if(currentUser != null && currentUser.uid == widget.userId)...[
             IconButton(
-              onPressed: () {_showEditDialog();},
+              // use async keyword to wait for EditPost
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditPost(
+                      title: _currentTitle,
+                      content: _currentContent,
+                      documentId: widget.documentId,
+                      onPostFixed: widget.onPostFixed,
+                    ),
+                  ),
+                );
+
+                // Check if the result is not null and contains updated data
+                if(result != null && result is Map<String, String>) {
+                 setState(() {
+                   _currentTitle = result['title']!;
+                   _currentContent = result['content']!;
+                 });
+                }
+              },
               icon: Icon(Icons.edit, color: Colors.black),
             ),
             IconButton(
@@ -93,7 +115,7 @@ class _PostState extends State<Post> {
           SizedBox(height: 14),
           Row(
             children: [
-              Text(DateFormat('MM/dd hh:mm').format(widget.timestamp), style: TextStyle(fontSize: 16, color: Colors.black54)),
+              Text(DateFormat('MM/dd HH:mm').format(widget.timestamp), style: TextStyle(fontSize: 16, color: Colors.black54)),
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 5),
                 width: 0.5,
@@ -108,93 +130,38 @@ class _PostState extends State<Post> {
     );
   }
 
-  void _showEditDialog() {
-    // Pre-fill TextEditingController with existing title and content
-    TextEditingController _titleController = TextEditingController(text: _currentTitle);
-    TextEditingController _contentController = TextEditingController(text: _currentContent);
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Edit Post'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: 'Title'),
-              ),
-              TextField(
-                controller: _contentController,
-                decoration: InputDecoration(labelText: 'Content'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {Navigator.of(context).pop();},
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                _editPost(_titleController.text, _contentController.text);
-                // In here, we do not use [Navigator.of(context).pop] that makes move to [post.dart] as it is edit not delete.
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      }
-    );
-  }
-
-  Future<void> _editPost(String newTitle, String newContent) async {
-    try {
-      await FirebaseFirestore.instance.collection('posts').doc(widget.documentId)
-        .update({'title' : newTitle, 'content' : newContent});
-
-      // Update the UI with new data.
-      // Update state variables instead of widget properties (widget.title or widget.content which are non-changeable)
-      setState(() {
-        _currentTitle = newTitle;
-        _currentContent = newContent;
-      });
-
-      // Call the callback to refresh the community screen
-      widget.onPostFixed();
-
-      Navigator.of(context).pop(); // Go back to the previous screen (to a post.dart)
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Post updated successfully!')));
-    } catch (e) {
-      print('Error updating post: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update post. Please try again.')));
-    }
-  }
-
   void _showDeleteConfirmationDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Delete Post"),
-          content: Text("Are you sure you want to delete this post? This action cannot be undone."),
+          backgroundColor: backgroundColor,
+          title: Text("게시글 삭제"),
+          content: Text("게시글을 삭제하시겠습니까?"),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Close the dialog
               },
-              child: Text("Cancel"),
+              child: Text(
+                '취소',
+                style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+              ),
             ),
             TextButton(
               onPressed: () {
                 _deletePost();
                 Navigator.of(context).pop(); // to community.dart
               },
-              child: Text("Delete"),
+              child: Text(
+                '삭제',
+                style: TextStyle(color: Colors.black),
+              ),
             ),
           ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          )
         );
       },
     );
@@ -314,7 +281,7 @@ class _PostState extends State<Post> {
           Text(content),
           Row(
             children: [
-              Text(DateFormat('MM/dd hh:mm').format(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
+              Text(DateFormat('MM/dd HH:mm').format(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 5),
                 width: 0.5,
@@ -333,7 +300,7 @@ class _PostState extends State<Post> {
     TextEditingController _commentController = TextEditingController();
 
     IconButton _suffixIconButton = IconButton(
-      icon: Icon(Icons.send),
+      icon: Icon(Icons.send, color: conceptColor),
       onPressed: () async {
         String commentContent = _commentController.text.trim();
 
@@ -367,13 +334,14 @@ class _PostState extends State<Post> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
+            child: TextFormField(
               controller: _commentController,
+              onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
               decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                hintText: '댓글을 작성해주세요',
+                hintText: '댓글을 입력하세요',
+                border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: conceptColor)),
                 contentPadding: EdgeInsets.only(left: 15),
                 suffixIcon: _suffixIconButton,
               ),

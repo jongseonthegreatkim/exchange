@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'post_submission_screen.dart';
+import 'new_post.dart';
 import 'post.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
@@ -45,23 +45,29 @@ class _CommunityState extends State<Community> {
 
       // Store the fetched posts in a state variable
       if(querySnapshot.docs.isNotEmpty) {
-        setState(() {
-          _posts.addAll(querySnapshot.docs); // Add all fetched documents to _posts
-          _lastDocument = querySnapshot.docs.last;
-          _isFetching = false; // Set fetching to false once data is loaded
-        });
+        if(mounted) { // check if the widget is still mounted
+          setState(() {
+            _posts.addAll(querySnapshot.docs); // Add all fetched documents to _posts
+            _lastDocument = querySnapshot.docs.last;
+            _isFetching = false; // Set fetching to false once data is loaded
+          });
+        }
       } else {
-        setState(() {
-          _hasMorePosts = false;
-          _isFetching = false;
-        });
+        if(mounted) { // check if the widget is still mounted
+          setState(() {
+            _hasMorePosts = false;
+            _isFetching = false;
+          });
+        }
       }
 
     } catch (e) {
       print('Error fetching posts: $e');
-      setState(() {
-        _isFetching = false;
-      });
+      if(mounted) { // check if the widget is still mounted
+        setState(() {
+          _isFetching = false;
+        });
+      }
     };
   }
 
@@ -81,27 +87,33 @@ class _CommunityState extends State<Community> {
           .get();
 
       if(querySnapshot.docs.isNotEmpty) {
-        setState(() {
-          _posts.addAll(querySnapshot.docs);
-          _lastDocument = querySnapshot.docs.last;
-          _isFetching = false;
-        });
+        if(mounted) { // check if the widget is still mounted
+          setState(() {
+            _posts.addAll(querySnapshot.docs);
+            _lastDocument = querySnapshot.docs.last;
+            _isFetching = false;
+          });
+        }
       } else {
-        setState(() {
-          _hasMorePosts = false;
-          _isFetching = false;
-        });
+        if(mounted) { // check if the widget is still mounted
+          setState(() {
+            _hasMorePosts = false;
+            _isFetching = false;
+          });
+        }
       }
     } catch (e) {
       print('Error fetching more posts: $e');
-      setState(() {
-        _isFetching = false;
-      });
+      if(mounted) { // check if the widget is still mounted\
+        setState(() {
+          _isFetching = false;
+        });
+      }
     }
   }
 
   Future<void> _refreshPosts() async {
-  // This function is sent to post_submission_screen.dart / post.dart and used with a name of onPostCreated() / onPostFixed()
+  // This function is sent to new_post.dart / post.dart and used with a name of onPostCreated() / onPostFixed()
   // Because this fuction is called when post is created / Fixed.
     setState(() {
       _posts.clear();

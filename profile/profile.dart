@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:exchange/login/login.dart';
 import 'user_content.dart';
 
@@ -161,7 +160,6 @@ class _ProfileState extends State<Profile> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
           ...contents.map((content) =>
             GestureDetector(
               onTap: () async {
@@ -192,9 +190,10 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: backgroundColor,
           title: Text('로그아웃'),
           content: Text('정말 로그아웃 할 거에요..?'),
-          actions: <Widget>[
+          actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
