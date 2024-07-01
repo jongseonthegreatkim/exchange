@@ -20,60 +20,9 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-
-  List<DocumentSnapshot> _userPosts = []; // post that user wrote
-  List<DocumentSnapshot> _userComments = []; // comment that user wrote
-  List<String> _userRef = []; // _userComments의 post title
-
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserContent(); // fetch user's content when initially draw the screen.
-  }
-
-  Future<void> _fetchUserContent() async {
-    final user = FirebaseAuth.instance.currentUser!;
-
-    final userId = user.uid;
-
-    // Fetch user's post orderd by timestamp
-    final QuerySnapshot postsSnapshot = await FirebaseFirestore.instance
-      .collection('posts')
-      .where('userId', isEqualTo: userId)
-      .orderBy('timestamp', descending: true)
-      .get();
-
-    // Fetch user's comment and its post title
-    final QuerySnapshot commentsSnapshot = await FirebaseFirestore.instance
-      .collectionGroup('comments') // Using collectionGroup to search in all comments subcollections
-      .where('userId', isEqualTo: userId)
-      .orderBy('timestamp', descending: true)
-      .get();
-
-    for(var comment in commentsSnapshot.docs) {
-      // Get the parent post's document ID from the comment's reference path
-      var parentSnapshot = await comment.reference.parent.parent!.get();
-      var theTitle = parentSnapshot['title'] ?? 'No Title';
-      _userRef.add(theTitle);
-    }
-
-    setState(() {
-      _userPosts = postsSnapshot.docs;
-      _userComments = commentsSnapshot.docs;
-      _isLoading = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return _isLoading
-    ? Center(child: CircularProgressIndicator(
-      color: conceptColor,
-      backgroundColor: backgroundColor,
-    ))
-    : SingleChildScrollView(
+    return SingleChildScrollView(
       child: Container(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -217,9 +166,9 @@ class _ProfileState extends State<Profile> {
             GestureDetector(
               onTap: () async {
                 if(content == '내 게시물') {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(userContent: _userPosts, userRef: [], isPost: true)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: true)));
                 } else if(content == '내 댓글') {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(userContent: _userComments, userRef: _userRef, isPost: false)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: false)));
                 } else if(content == '로그아웃') {
                   _showLogoutConfirmationDialog(context); // show the confirmation dialog
                 } else {

@@ -10,10 +10,8 @@ Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
 
 class UserContent extends StatefulWidget {
-  const UserContent({super.key, required this.userContent, required this.userRef, required this.isPost});
+  const UserContent({super.key, required this.isPost});
 
-  final List<DocumentSnapshot> userContent;
-  final List<String> userRef;
   final bool isPost;
 
   @override
@@ -21,13 +19,6 @@ class UserContent extends StatefulWidget {
 }
 
 class _UserContentState extends State<UserContent> {
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserContent();
-  }
-
   List<DocumentSnapshot> _userPosts = []; // post that user wrote
   List<DocumentSnapshot> _userComments = []; // comment that user wrote
   List<String> _userRef = []; // _userComments의 post title
@@ -67,8 +58,30 @@ class _UserContentState extends State<UserContent> {
     });
   }
 
+  Future<void> _refreshContents() async {
+    // This function is sent to post.dart and used with a name of onPostFixed()
+    // Because this fuction is called when post is Fixed.
+    setState(() {
+      _userPosts.clear();
+      _userComments.clear();
+      _userRef.clear();
+    });
+    await _fetchUserContent();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserContent(); // fetch user's content when initially draw the screen.
+
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    // isPost의 값에 따라, _usetContent에 _userPosts를 집어넣을 것인지 _userComments를 집어넣을 것인지 결정
+    List<DocumentSnapshot> _userContent = widget.isPost == true ? _userPosts : _userComments;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -76,38 +89,38 @@ class _UserContentState extends State<UserContent> {
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
         title: Text(widget.isPost == true ? '내 게시물' : '내 댓글'),
       ),
-      body: SafeArea(
+      body: _isLoading
+      ? Center(child: CircularProgressIndicator(
+        color: conceptColor,
+        backgroundColor: backgroundColor,
+      ))
+      : SafeArea(
         child: Expanded(
           child: ListView.builder(
             shrinkWrap: true,
-            itemCount: widget.userContent.length,
+            itemCount: _userContent.length,
             itemBuilder: (context, index) {
-              var post = widget.userContent[index];
-              String title = post['title'] ?? 'No Title';
+              var post = _userContent[index];
+
+              // Conditionally define title based on widget.isPost
+              String title;
+              if (widget.isPost) {
+                title = post['title'] ?? 'No Title';
+              } else {
+                title = _userRef[index]; // Use the parent post title from _userRef
+              }
+
               String content = post['content'] ?? 'No Content';
               DateTime timestamp = (post['timestamp'] as Timestamp).toDate();
               String userId = post['userId'] ?? 'Anonymous';
               String documentId = post.id;
 
-              if(post['title'] != null) {
-                return _buildContentCard(title, content, timestamp, userId, documentId);
-              } else {
-                //return _buildContentCard(widget.userRef[index], content, timestamp);
-              }
+              return _buildContentCard(title, content, timestamp, userId, documentId);
             },
           ),
         )
       ),
     );
-  }
-
-  Future<void> _refreshContents() async {
-    // This function is sent to post.dart and used with a name of onPostFixed()
-    // Because this fuction is called when post is Fixed.
-    setState(() {
-
-    });
-    await _fetchUserContent();
   }
 
   // Word 'content' is used as it might be post or comment
