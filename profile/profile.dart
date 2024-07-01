@@ -1,0 +1,280 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:exchange/login/login.dart';
+import 'user_content.dart';
+
+Color backgroundColor = Color(0xFFF8F7F4);
+Color conceptColor = Color(0xFF73A9DA);
+Color conceptBackgroundColor = Color(0xFFF5DADA);
+Color intermediateBackgroundColor = Color(0xFFfbfff8);
+
+class Profile extends StatefulWidget {
+  final String username;
+  final String university;
+
+  Profile({super.key, required this.username, required this.university});
+
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+
+  List<DocumentSnapshot> _userPosts = []; // post that user wrote
+  List<DocumentSnapshot> _userComments = []; // comment that user wrote
+  List<String> _userRef = []; // _userComments의 post title
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserContent(); // fetch user's content when initially draw the screen.
+  }
+
+  Future<void> _fetchUserContent() async {
+    final user = FirebaseAuth.instance.currentUser!;
+
+    final userId = user.uid;
+
+    // Fetch user's post orderd by timestamp
+    final QuerySnapshot postsSnapshot = await FirebaseFirestore.instance
+      .collection('posts')
+      .where('userId', isEqualTo: userId)
+      .orderBy('timestamp', descending: true)
+      .get();
+
+    // Fetch user's comment and its post title
+    final QuerySnapshot commentsSnapshot = await FirebaseFirestore.instance
+      .collectionGroup('comments') // Using collectionGroup to search in all comments subcollections
+      .where('userId', isEqualTo: userId)
+      .orderBy('timestamp', descending: true)
+      .get();
+
+    for(var comment in commentsSnapshot.docs) {
+      // Get the parent post's document ID from the comment's reference path
+      var parentSnapshot = await comment.reference.parent.parent!.get();
+      var theTitle = parentSnapshot['title'] ?? 'No Title';
+      _userRef.add(theTitle);
+    }
+
+    setState(() {
+      _userPosts = postsSnapshot.docs;
+      _userComments = commentsSnapshot.docs;
+      _isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isLoading
+    ? Center(child: CircularProgressIndicator(
+      color: conceptColor,
+      backgroundColor: backgroundColor,
+    ))
+    : SingleChildScrollView(
+      child: Container(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfileSection(), // 프로필 섹션
+            SizedBox(height: 20),
+            _buildSettingSection(), // 설정 섹션
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("내 프로필", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
+        _buildProfileCard(widget.username, widget.university),
+        SizedBox(height: 25),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("프로필 완성하기", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text("3/6", style: TextStyle(fontSize: 17, color: Colors.black54)),
+          ],
+        ),
+        SizedBox(height: 10),
+        Stack(
+          children: [
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: 10,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.grey,
+              ),
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width / 2,
+              height: 10,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: conceptColor,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        SizedBox(
+          height: 76,
+          child: ListView(
+            shrinkWrap: true,
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildProfileEditCard("희망 국가 등록", "교환학생을 가고 싶은 나라를 등록해주세요"),
+              SizedBox(width: 10),
+              _buildProfileEditCard("희망 학교 등록", "최대 3개까지 고를 수 있어요"),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  Widget _buildProfileCard(String name, String university) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey, width: 0.5),
+        color: intermediateBackgroundColor,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.person, size: 100, color: conceptColor),
+          SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text(university, style: TextStyle(fontSize: 15)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildProfileEditCard(String title, String content) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey, width: 0.5),
+        color: intermediateBackgroundColor,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(content, style: TextStyle(fontSize: 15)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSettingCard("내 활동", ["내 게시물", '내 댓글']),
+        SizedBox(height: 10),
+        _buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
+        SizedBox(height: 10),
+        _buildSettingCard("개인정보 설정", ["아이디 변경", "비밀번호 변경", "계정 삭제", '로그아웃']),
+      ],
+    );
+  }
+  Widget _buildSettingCard(String title, List<String> contents) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.grey, width: 1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          SizedBox(height: 10),
+          ...contents.map((content) =>
+            GestureDetector(
+              onTap: () async {
+                if(content == '내 게시물') {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(userContent: _userPosts, userRef: [], isPost: true)));
+                } else if(content == '내 댓글') {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(userContent: _userComments, userRef: _userRef, isPost: false)));
+                } else if(content == '로그아웃') {
+                  _showLogoutConfirmationDialog(context); // show the confirmation dialog
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Text(content, style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('로그아웃'),
+          content: Text('정말 로그아웃 할 거에요..?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text(
+                '취소',
+                style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Perform the logout and navigation
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => Login()),
+                );
+              },
+              child: Text(
+                '로그아웃',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        );
+      },
+    );
+  }
+}
