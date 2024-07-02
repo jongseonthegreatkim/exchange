@@ -93,8 +93,18 @@ class _PostState extends State<Post> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildPostSection(), // Post
-            Expanded(child: _buildCommentsListSection()), // Comments
+            Expanded(
+              child: SingleChildScrollView( // To make Post section and Comments section to be scrollable altogether.
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildPostSection(), // Post
+                    _buildCommentsListSection(), // Comments
+                  ],
+                ),
+              ),
+            ),
             _buildAddCommentSection(), // Add Comments
           ],
         ),
@@ -211,7 +221,8 @@ class _PostState extends State<Post> {
           int numberOfCommenter = _getNumberOfCommenter(comments);
 
           return ListView.builder(
-            shrinkWrap: true, // So it doesn't take full screen
+            physics: NeverScrollableScrollPhysics(), // Disable scrolling independently. It will be scrollable inside a SingleChildScrollView
+            shrinkWrap: true, // Allow ListView to take only as much space as it needs.
             itemCount: comments.length,
             itemBuilder: (context, index) {
               var comment = comments[index];
