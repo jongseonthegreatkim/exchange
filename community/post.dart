@@ -31,9 +31,36 @@ class Post extends StatefulWidget {
 }
 
 class _PostState extends State<Post> {
-
   late String _currentTitle; // State variable for the title
   late String _currentContent; // State variable for the content
+
+  List<DocumentSnapshot> _comments = []; // Store comments in state
+  bool _isFetchingComments = true;
+
+  Future<void> _fetchComments() async {
+    setState(() {
+      _isFetchingComments = true; // Indicate loading state
+    });
+
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.documentId)
+          .collection('comments')
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      setState(() {
+        _comments = querySnapshot.docs; // Update state with fetched comments
+        _isFetchingComments = false; // Reset loading state
+      });
+    } catch (e) {
+      setState(() {
+        _isFetchingComments = false; // Reset loading state on error
+      });
+      print('Error fetching comment: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -41,6 +68,7 @@ class _PostState extends State<Post> {
     // Initialize state variable with the widget's initial values
     _currentTitle = widget.title;
     _currentContent = widget.content;
+    _fetchComments(); // Initial fetch of comments
   }
 
   @override
@@ -100,7 +128,12 @@ class _PostState extends State<Post> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildPostSection(), // Post
-                    _buildCommentsListSection(), // Comments
+                    _isFetchingComments
+                    ? Center(child: CircularProgressIndicator(
+                      color: conceptColor,
+                      backgroundColor: backgroundColor,
+                    ))
+                    : _buildCommentsListSection(), // Comments
                   ],
                 ),
               ),
@@ -196,65 +229,37 @@ class _PostState extends State<Post> {
 
   // Fetching and displaying the comments list
   Widget _buildCommentsListSection() {
-    return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance
-        .collection('posts')
-        .doc(widget.documentId) // Use the unique document ID
-        .collection('comments')
-        .orderBy('timestamp', descending: true)
-        .get(),
+    // Using the state variable '_comments' to render the comments list
+    int numberOfCommenter = _getNumberOfCommenter(_comments);
 
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(
-            color: conceptColor,
-            backgroundColor: backgroundColor,
-          ));
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error loading comments'));
-        } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text('아직 댓글이 없습니다!'));
-        } else {
-          var comments = snapshot.data!.docs;
+    return ListView.builder(
+      physics: NeverScrollableScrollPhysics(), // Disable scrolling independently. It will be scrollable inside a SingleChildScrollView
+      shrinkWrap: true, // Allow ListView to take only as much space as it needs.
+      itemCount: _comments.length,
+      itemBuilder: (context, index) {
+        var comment = _comments[index];
+        String content = comment['content'] ?? 'No Content';
+        DateTime timestamp = (comment['timestamp'] as Timestamp).toDate();
+        String userId = comment['userId'] ?? 'Anonymous';
+        String anonymousId = _getAnonymousId(userId, numberOfCommenter);
 
-          // 여기서 글쓴이를 제외한 명 수를 계산해줘야 함. 그래서 이 값에서 빼주는 걸로 해야 할 듯.
-          int numberOfCommenter = _getNumberOfCommenter(comments);
-
-          return ListView.builder(
-            physics: NeverScrollableScrollPhysics(), // Disable scrolling independently. It will be scrollable inside a SingleChildScrollView
-            shrinkWrap: true, // Allow ListView to take only as much space as it needs.
-            itemCount: comments.length,
-            itemBuilder: (context, index) {
-              var comment = comments[index];
-              String content = comment['content'] ?? 'No Content';
-              DateTime timestamp = (comment['timestamp'] as Timestamp).toDate();
-              String userId = comment['userId'] ?? 'Anonymous';
-              String anonymousId = _getAnonymousId(userId, numberOfCommenter);
-
-              return _buildCommentsListCard(content, timestamp, anonymousId);
-            },
-          );
-        }
+        return _buildCommentsListCard(content, timestamp, anonymousId);
       },
     );
   }
 
   int _getNumberOfCommenter(var comments) {
-
-    int numberOfCommenter = 0;
     Set<String> commenterSet = {};
 
     for(var comment in comments) {
       var userId = comment['userId'];
 
       // 글쓴이도 아니고, 이미 작성한 이력이 있는 user도 아닌 경우에만 실행
-      if(userId != widget.userId && !commenterSet.contains(userId)) {
-        numberOfCommenter++;
+      if(userId != widget.userId && !commenterSet.contains(userId))
         commenterSet.add(userId);
-      }
     }
 
-    return numberOfCommenter;
+    return commenterSet.length;
   }
 
   // First String is userId, second String is return value.
@@ -263,17 +268,23 @@ class _PostState extends State<Post> {
 
   String _getAnonymousId(String userId, int numberOfCommenter) {
     // Check if the user is the post author
-    if(userId == widget.userId)
+    if(userId == widget.userId) {
+      print('Post Author: 익명(글쓴이) is sent');
       return '익명(글쓴이)';
+    }
 
     // Check if the userId already got anonymousId
-    if(_anonymousIdMap.containsKey(userId))
+    if(_anonymousIdMap.containsKey(userId)) {
+      print('Already Exist: ${_anonymousIdMap[userId]!} is sent');
       return _anonymousIdMap[userId]!;
+    }
 
     // Otherwise, this userId is new in this post
     // Calculate how old commenter he/she is
     // If _anonymousCounter stays zero, it means, in this post, he/she is newest commenter.
     String temp = '익명${numberOfCommenter - _anonymousCounter}';
+    print('nOC: $numberOfCommenter, _aC: $_anonymousCounter');
+    print('New Born Baby: $temp is sent');
     _anonymousIdMap[userId] = temp;
     _anonymousCounter++;
     return temp;
@@ -332,6 +343,14 @@ class _PostState extends State<Post> {
 
           // Clear the input field
           _commentController.clear();
+
+          // Refetch comments to update the list and anonymous identifiers
+          await _fetchComments();
+
+          // Reset the _anonymousCounter -> Key point!
+          // As we calculate _anonymousId as (number of commenter - _anonymousCounter), we should reset _anonymousCounter when new comment is created
+          // And number of commenter should not be reseted when new comment is created.
+          _anonymousCounter = 0;
 
           // Refresh the comments list
           setState(() {});
