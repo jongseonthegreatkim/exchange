@@ -268,26 +268,20 @@ class _PostState extends State<Post> {
 
   String _getAnonymousId(String userId, int numberOfCommenter) {
     // Check if the user is the post author
-    if(userId == widget.userId) {
-      print('Post Author: 익명(글쓴이) is sent');
+    if(userId == widget.userId)
       return '익명(글쓴이)';
-    }
 
     // Check if the userId already got anonymousId
-    if(_anonymousIdMap.containsKey(userId)) {
-      print('Already Exist: ${_anonymousIdMap[userId]!} is sent');
+    if(_anonymousIdMap.containsKey(userId))
       return _anonymousIdMap[userId]!;
-    }
 
     // Otherwise, this userId is new in this post
     // Calculate how old commenter he/she is
     // If _anonymousCounter stays zero, it means, in this post, he/she is newest commenter.
-    String temp = '익명${numberOfCommenter - _anonymousCounter}';
-    print('nOC: $numberOfCommenter, _aC: $_anonymousCounter');
-    print('New Born Baby: $temp is sent');
-    _anonymousIdMap[userId] = temp;
+    String _anonymousId = '익명${numberOfCommenter - _anonymousCounter}';
+    _anonymousIdMap[userId] = _anonymousId;
     _anonymousCounter++;
-    return temp;
+    return _anonymousId;
   }
 
   Widget _buildCommentsListCard(String content, DateTime timestamp, String anonymousId) {

@@ -1,39 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
 Color conceptColor = Color(0xFF73A9DA);
 Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
-
-class EditPost extends StatefulWidget {
-  const EditPost({super.key, required this.title, required this.content, required this.documentId, required this.onPostFixed});
-
-  final String title;
-  final String content;
-  final String documentId;
-  final Function onPostFixed;
+class Suggestion extends StatefulWidget {
+  const Suggestion({super.key});
 
   @override
-  State<EditPost> createState() => _EditPostState();
+  State<Suggestion> createState() => _SuggestionState();
 }
 
-class _EditPostState extends State<EditPost> {
+class _SuggestionState extends State<Suggestion> {
 
   double _pageMargin = 16;
 
   @override
   Widget build(BuildContext context) {
-    // Pre-fill TextEditingController with existing title and content
-    TextEditingController _titleController = TextEditingController(text: widget.title);
-    TextEditingController _contentController = TextEditingController(text: widget.content);
+    TextEditingController _titleController = TextEditingController();
+    TextEditingController _contentController = TextEditingController();
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
-        title: Text('게시글 수정'),
+        title: Text('건의하기'),
         titleSpacing: 0, // To make title to stay at the middle
         actions: [
           GestureDetector(
@@ -58,13 +52,9 @@ class _EditPostState extends State<EditPost> {
           SizedBox(width: _pageMargin),
           GestureDetector(
             onTap: () {
-              _editPost(_titleController.text, _contentController.text);
-
-              // Pop 하면서 title과 content라는 Key를 만들어서 거기에 value를 담아 전달
-              Navigator.of(context).pop({
-                'title' : _titleController.text,
-                'content' : _contentController.text,
-              });
+              _saveSuggestion(_titleController.text, _contentController.text);
+              Navigator.of(context).pop(); // 다시 profile.dart로 돌아감.
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('회원님의 건의사항이 정상적으로 등록되었습니다!')));
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -73,7 +63,7 @@ class _EditPostState extends State<EditPost> {
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Text(
-                '수정',
+                '제출',
                 style: TextStyle(
                   fontSize: 15,
                 ),
@@ -131,9 +121,10 @@ class _EditPostState extends State<EditPost> {
               children: [
                 Expanded(
                   child: Text(
-                    '교환하냥은 모두가 건전하게 활동하는 커뮤니티를 지향합니다. '
-                    '커뮤니티 가이드라인을 준수하지 않는 경우, 게시물이 삭제될 수 있습니다. '
-                    '커뮤니티의 성격과 맞지 않는 정치/시사 주제의 게시물을 삼가 주시기 바랍니다. ',
+                    '회원님의 건의사항은 바로 개발자에게 전달되게 됩니다. '
+                    '건의사항에 대한 답변은 하루 이내로 회원님의 이메일로 전달 될 예정입니다. '
+                    '서비스의 품질 개선을 위한 어떠한 의견도 열린 마음으로 받아들이고 있습니다. '
+                    '서비스와 관련 없는 건의사항은 삭제 조치 될 수 있습니다. ',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ),
@@ -145,13 +136,17 @@ class _EditPostState extends State<EditPost> {
     );
   }
 
-  Future<void> _editPost(String newTitle, String newContent) async {
-    try {
-      await FirebaseFirestore.instance.collection('posts').doc(widget.documentId)
-          .update({'title' : newTitle, 'content' : newContent});
+  Future<void> _saveSuggestion(String newTitle, String newContent) async {
+    final user = FirebaseAuth.instance.currentUser!;
+    final userEmail = user.email;
 
-      // Call the callback to refresh the community screen
-      widget.onPostFixed();
+    try {
+      await FirebaseFirestore.instance.collection('suggestions').doc().set({
+        'title' : newTitle,
+        'content' : newContent,
+        'userEmail' : userEmail,
+        'timestamp' : FieldValue.serverTimestamp(),
+      });
 
       //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Post updated successfully!')));
     } catch (e) {

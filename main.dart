@@ -98,15 +98,23 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
 
     Text _appBarTitle = Text('교환하냥');
-    Icon _appBarLeading = Icon(Icons.school, size: 30, color: Colors.black);
+    late var _appBarLeading;
 
+    if(_currentIndex == 0) {
+      _appBarLeading = Padding(
+        padding: EdgeInsets.only(left: 15),
+        child: Image.asset(
+          'assets/images/logo.png', width: 30, height: 30,
+        ),
+      );
+    }
     if(_currentIndex == 1) {
       _appBarTitle = Text('커뮤니티');
-      _appBarLeading = Icon(Icons.list_alt);
+      _appBarLeading = Icon(Icons.list_alt, size: 30, color: Colors.black);
     }
     if(_currentIndex == 2) {
       _appBarTitle = Text('프로필');
-      _appBarLeading = Icon(Icons.person);
+      _appBarLeading = Icon(Icons.person, size: 30, color: Colors.black);
     };
 
     return Scaffold(
@@ -116,17 +124,23 @@ class _HomeState extends State<Home> {
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
         leading: _appBarLeading,
         title: _appBarTitle,
-        titleSpacing: 0,
+        titleSpacing: _currentIndex == 0 ? 11 : 0,
+        centerTitle: false,
+        /*
         actions: [
           IconButton(
             icon: Icon(Icons.search, color: Colors.black),
             onPressed: () {},
           ),
+          /*
           IconButton(
-            icon: Icon(Icons.notifications, color: Colors.black),
+            icon: Icon(Icons.settings, color: Colors.black),
             onPressed: () {},
           ),
+          */
         ],
+
+         */
       ),
       body: _body(context, _currentIndex),
       bottomNavigationBar: BottomNavigationBar(

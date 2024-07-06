@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:exchange/login/login.dart';
 import 'user_content.dart';
+import 'suggestion.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
 Color conceptColor = Color(0xFF73A9DA);
@@ -40,9 +41,10 @@ class _ProfileState extends State<Profile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("내 프로필", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        SizedBox(height: 10),
+        //Text("내 프로필", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        //SizedBox(height: 10),
         _buildProfileCard(widget.username, widget.university),
+        /*
         SizedBox(height: 25),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -85,6 +87,7 @@ class _ProfileState extends State<Profile> {
             ],
           ),
         ),
+        */
       ],
     );
   }
@@ -145,7 +148,9 @@ class _ProfileState extends State<Profile> {
         SizedBox(height: 10),
         _buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
         SizedBox(height: 10),
-        _buildSettingCard("개인정보 설정", ["아이디 변경", "비밀번호 변경", "계정 삭제", '로그아웃']),
+        _buildSettingCard("개인정보 설정", ['로그아웃', '계정 삭제']),
+        SizedBox(height: 10),
+        _buildSettingCard("문의", ['문의하기']),
       ],
     );
   }
@@ -168,7 +173,11 @@ class _ProfileState extends State<Profile> {
                 } else if(content == '내 댓글') {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: false)));
                 } else if(content == '로그아웃') {
-                  _showLogoutConfirmationDialog(context); // show the confirmation dialog
+                  _showLogoutDialog(context); // show the confirmation dialog
+                } else if(content == '계정 삭제') {
+                  _showDeleteAccountDialog(context); // show the confirmation dialog
+                } else if(content == '문의하기') {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => Suggestion()));
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
                 }
@@ -185,7 +194,7 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  void _showLogoutConfirmationDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -214,6 +223,55 @@ class _ProfileState extends State<Profile> {
               },
               child: Text(
                 '로그아웃',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text('계정 삭제'),
+          content: Text('계정을 삭제 하시면, 작성하신 게시글 및 댓글에 더 이상 접근 및 수정이 불가능합니다. 그래도 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text(
+                '취소',
+                style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                User? user = FirebaseAuth.instance.currentUser;
+
+                if(user != null) {
+                  try {
+                    await user.delete(); // Delete the user
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => Login()),
+                    );
+                  } catch (e) {
+                    print('Error deleting user: $e');
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('계정 삭제 중 문제가 발생했습니다. 다시 시도해 주세요.')));
+                  }
+                }
+              },
+              child: Text(
+                '계정 삭제',
                 style: TextStyle(color: Colors.black),
               ),
             ),

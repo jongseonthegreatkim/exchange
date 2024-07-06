@@ -73,9 +73,9 @@ class _InfoState extends State<Info> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildScheduleSection(universityData!['일정']), // 모집 일정 안내
-              SizedBox(height: 25),
+              SizedBox(height: 30),
               _buildRelativesSection(universityData!['상대교']), // 지원 가능 대학 목록
-              SizedBox(height: 25),
+              SizedBox(height: 30),
               _buildCriteriaSection(universityData!['기준']), // 지원 조건 및 선발 기준
             ],
           ),
@@ -97,36 +97,50 @@ class _InfoState extends State<Info> {
     DateTime latestValue = dateEntries[0].value;
 
     // Use _now that changes every second
-    int days = latestValue.difference(_now).inDays;
-    int hours = latestValue.difference(_now).inHours - days * 24;
-    int minutes = latestValue.difference(_now).inMinutes - (hours + days * 24) * 60;
-    int seconds = latestValue.difference(_now).inSeconds - (minutes + (hours + days * 24) * 60) * 60;
+    int dd = latestValue.difference(_now).inDays;
+    int hh = latestValue.difference(_now).inHours - dd * 24;
+    int mm = latestValue.difference(_now).inMinutes - (hh + dd * 24) * 60;
+    int ss = latestValue.difference(_now).inSeconds - (mm + (hh + dd * 24) * 60) * 60;
+    late String days;
+    late String hours;
+    late String minutes;
+    late String seconds;
+    // 숫자의 값이 0일 경우에 화면에 보이지 않게 하는 기술.
+    days = dd!=0 ? '$dd일' : '';
+    hours = hh!=0 ? '$hh시간' : '';
+    minutes = mm!=0 ? '$mm분' : '';
+    seconds = ss!=0 ? '$ss초' : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("모집 일정 안내", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        Text(
-          '${widget.university} $latestKey까지',
-          style: TextStyle(color: Colors.black, fontSize: 17),
+        //Text("모집 일정 안내", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        FittedBox(
+          child: Text(
+            '${widget.university} $latestKey까지',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+            ),
+          ),
         ),
         RichText(
           text: TextSpan(
             children: [
               TextSpan(
-                text: '$days일 $hours시간 $minutes분 $seconds초',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                text: '$days $hours $minutes $seconds',
+                style: TextStyle(color: Colors.redAccent, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextSpan(
                 text: " 남았어요!",
-                style: TextStyle(color: Colors.black, fontSize: 17),
+                style: TextStyle(color: Colors.black, fontSize: 20),
               ),
             ],
           ),
         ),
         SizedBox(height: 10),
         SizedBox(
-          height: 110,
+          height: 115,
           child: ListView(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
@@ -159,9 +173,15 @@ class _InfoState extends State<Info> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: TextStyle(color: Colors.black, fontSize: 17),
+          ),
           SizedBox(height: 10),
-          Text(date, style: TextStyle(fontSize: 15)),
+          Text(
+            date,
+            style: TextStyle(color: Colors.black, fontSize: 17),
+          ),
           SizedBox(height: 10),
           GestureDetector(
             onTap: () {
@@ -175,25 +195,32 @@ class _InfoState extends State<Info> {
   }
 
   Widget _buildRelativesSection(Map<String, dynamic> relatives) {
-
     List<String> areas = relatives.keys.toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("지원 가능 대학 목록", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            //Text("지원 가능 대학 목록", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(
+              '지원 가능 대학들을 확인해보세요!',
+              style: TextStyle(color: Colors.black, fontSize: 20),
+            ),
             GestureDetector(
               onTap: () {
                 // 지원 가능 대학 목록 전체 보기
-                Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
+                  relatives: relatives,
+                  areas: areas,
+                )));
               },
               child: Row(
                 children: [
-                  Text("전체 보기", style: TextStyle(color: Colors.black54)),
-                  Icon(Icons.keyboard_arrow_right_sharp, size: 20, color: Colors.black54),
+                  Text("전체 보기", style: TextStyle(color: Colors.grey, fontSize: 15)),
+                  Icon(Icons.keyboard_arrow_right_sharp, size: 20, color: Colors.grey),
                 ],
               ),
             ),
@@ -201,14 +228,21 @@ class _InfoState extends State<Info> {
         ),
         SizedBox(height: 10),
         SizedBox(
-          height: 236,
+          height: 221,
           child: ListView(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
             children: [
               ...areas.map((area) {
-                List universitiesInArea = relatives[area].values.toList();
-                return _buildRelativesCard(area, universitiesInArea);
+                List universitiesInArea = relatives[area].keys.toList();
+
+                // previewSplit개 만큼만 universitiesInArea에서 떼 올 예정
+                int previewSplit = (universitiesInArea.length >= 5) ? 5 : universitiesInArea.length;
+
+                // 떼 온 값을 previewUnivList에 넣는다
+                List previewUnivList = universitiesInArea.sublist(0, previewSplit);
+
+                return _buildRelativesCard(area, previewUnivList, relatives);
               }),
             ],
           ),
@@ -216,8 +250,12 @@ class _InfoState extends State<Info> {
       ],
     );
   }
-  Widget _buildRelativesCard(String title, List<dynamic> universities) {
+  Widget _buildRelativesCard(String title, List<dynamic> universities, Map<String, dynamic> relatives) {
+    // relatives와 areas : 자세히 보기를 위해서 사용
+    List<String> areas = relatives.keys.toList();
+
     return Container(
+      width: 200,
       margin: EdgeInsets.only(right: 10),
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -227,34 +265,32 @@ class _InfoState extends State<Info> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: title.split(' ')[0], // "북미권" or "유럽권"
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
-                ),
-                TextSpan(
-                  text: title.substring(title.split(' ')[0].length), // " 지원 가능 대학"
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
-                ),
-              ],
-            ),
+          Text(
+            title,
+            style: TextStyle(color: Colors.black, fontSize: 17),
           ),
           SizedBox(height: 8),
           ...universities.map((university) =>
-              Column(
-                children: [
-                  Text(university, style: TextStyle(overflow: TextOverflow.ellipsis)),
-                  SizedBox(height: 5),
-                ],
-              ),
+            Column(
+              children: [
+                Text(university, style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 15,
+                  overflow: TextOverflow.ellipsis,
+                )),
+                SizedBox(height: 5),
+              ],
+            ),
           ),
           SizedBox(height: 15),
           GestureDetector(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
+                relatives: relatives,
+                areas: areas,
+              )));
             },
             child: Text("자세히 보기", style: TextStyle(fontSize: 15)),
           ),
@@ -281,8 +317,11 @@ class _InfoState extends State<Info> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("지원 조건 및 선발 기준", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        //Text("자교와 상대교의 지원 조건과 선발 기준을 알아봐요!", style: TextStyle(fontSize: 17)),
+        //Text("지원 조건 및 선발 기준", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Text(
+          "지원 조건과 선발 기준을 알아봐요!",
+          style: TextStyle(color: Colors.black, fontSize: 20),
+        ),
         SizedBox(height: 10),
         ListView(
           scrollDirection: Axis.vertical,
@@ -292,12 +331,10 @@ class _InfoState extends State<Info> {
             ...standards.map((standard) {
               List standardContents = criteria[standard].values.toList(); // 조건 목록들
 
-              if(standard == '선발 기준') {
-                // resort criteria['선발 기준'] based on order of criteria['선발 기준'].key
-                List<MapEntry<String, dynamic>> sortedEntries = criteria[standard].entries.toList()..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
-                // Re-put sorted value into standardContents
-                standardContents = sortedEntries.map((entry) => entry.value).toList();
-              }
+              // resort criteria['standard'] based on order of criteria['standard'].key
+              List<MapEntry<String, dynamic>> sortedEntries = criteria[standard].entries.toList()..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
+              // Re-put sorted value into standardContents
+              standardContents = sortedEntries.map((entry) => entry.value).toList();
 
               String etc = '내 성적 입력하기';
               standard == '선발 기준' ? etc = '빈칸' : (standard == '지원 조건' ? etc = '자세히 보기': null);
@@ -323,17 +360,24 @@ class _InfoState extends State<Info> {
           RichText(
             text: TextSpan(
               text: university,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+              style: TextStyle(color: Colors.black, fontSize: 17),
               children: [
                 TextSpan(
                   text: standard,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+                  style: TextStyle(color: Colors.black, fontSize: 17),
                 ),
               ],
             ),
           ),
           SizedBox(height: 8),
-          ...standdardContents.map((standardContent) => Text(standardContent, style: TextStyle(fontSize: 15))),
+          ...standdardContents.map((standardContent) =>
+            Column(
+              children: [
+                Text(standardContent, style: TextStyle(fontSize: 15)),
+                SizedBox(height: 5),
+              ],
+            ),
+          ),
           if(etc != "빈칸")...[
             SizedBox(height: 15),
             GestureDetector(
