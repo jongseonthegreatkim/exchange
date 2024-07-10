@@ -9,7 +9,10 @@ Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
 
 class Community extends StatefulWidget {
-  const Community({super.key});
+  const Community({super.key, required this.username, required this.university});
+
+  final String username;
+  final String university;
 
   @override
   State<Community> createState() => _CommunityState();
@@ -149,6 +152,8 @@ class _CommunityState extends State<Community> {
       ))
       : RefreshIndicator(
         onRefresh: _refreshPosts,
+        color: conceptColor, // 리프레시 하면 상단에 뜨는 CircularProgressIndicator의 색상.
+        backgroundColor: backgroundColor,
         child: NotificationListener<ScrollNotification>(
           onNotification: (scrollNotification) {
             final maxScroll = scrollNotification.metrics.maxScrollExtent;
@@ -215,6 +220,8 @@ class _CommunityState extends State<Community> {
             userId: userId,
             documentId: documentId, // Pass the unique documentId (the name of document of each post) to distinguish each post
             onPostFixed: _refreshPosts,
+            username: widget.username, // For blocking feature.
+            university: widget.university, // For blocking feature.
           ),
         ));
       },

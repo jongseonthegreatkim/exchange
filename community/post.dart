@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For user authentication
 import 'package:intl/intl.dart';
+import '../main.dart';
 import 'edit_post.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
@@ -17,6 +18,7 @@ class Post extends StatefulWidget {
     required this.userId,
     required this.documentId,
     required this.onPostFixed,
+    required this.username, required this.university,
   });
 
   final String title;
@@ -25,6 +27,8 @@ class Post extends StatefulWidget {
   final String userId;
   final String documentId; // Unique document ID for the post
   final Function onPostFixed; // To refresh community.dart when we edit / delete the post
+
+  final String username; final String university; // Used for block feature.
 
   @override
   State<Post> createState() => _PostState();
@@ -140,51 +144,9 @@ class _PostState extends State<Post> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the current user
-    User? currentUser = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: backgroundColor,
-        scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
-        title: Text('커뮤니티'),
-        titleSpacing: 0,
-        actions: [
-          // Only show edit and delete buttons if the user is the author
-          if(currentUser != null && currentUser.uid == widget.userId)...[
-            IconButton(
-              // use async keyword to wait for EditPost
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditPost(
-                      title: _currentTitle,
-                      content: _currentContent,
-                      documentId: widget.documentId,
-                      onPostFixed: widget.onPostFixed,
-                    ),
-                  ),
-                );
-
-                // Check if the result is not null and contains updated data
-                if(result != null && result is Map<String, String>) {
-                  setState(() {
-                    _currentTitle = result['title']!;
-                    _currentContent = result['content']!;
-                  });
-                }
-              },
-              icon: Icon(Icons.edit, color: Colors.black),
-            ),
-            IconButton(
-              onPressed: () {_showDeleteConfirmationDialog();},
-              icon: Icon(Icons.delete_forever, color: Colors.black),
-            ),
-          ]
-        ],
-      ),
+      appBar: _appBar(),
       body: SafeArea(
         child: Column(
           children: [
@@ -212,6 +174,68 @@ class _PostState extends State<Post> {
   }
 
   // From here is for appBar
+
+  AppBar _appBar() {
+    // Get the current user
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    return AppBar(
+      backgroundColor: backgroundColor,
+      scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
+      title: Text('커뮤니티'),
+      titleSpacing: 0,
+      centerTitle: false,
+      actions: [
+        // Only show edit and delete buttons if the user is the author
+        if(currentUser != null && currentUser.uid == widget.userId)...[
+          IconButton(
+            // use async keyword to wait for EditPost
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditPost(
+                    title: _currentTitle,
+                    content: _currentContent,
+                    documentId: widget.documentId,
+                    onPostFixed: widget.onPostFixed,
+                  ),
+                ),
+              );
+
+              // Check if the result is not null and contains updated data
+              if(result != null && result is Map<String, String>) {
+                setState(() {
+                  _currentTitle = result['title']!;
+                  _currentContent = result['content']!;
+                });
+              }
+            },
+            icon: Icon(Icons.edit, color: Colors.black),
+          ),
+          IconButton(
+            onPressed: () {_showDeleteConfirmationDialog();},
+            icon: Icon(Icons.delete_forever, color: Colors.black),
+          ),
+        ],
+        if(currentUser != null && currentUser.uid != widget.userId)...[
+          IconButton(
+            onPressed: () {
+              _showReportDialog(context);
+            },
+            icon: Icon(Icons.report, color: Colors.black),
+          ),
+          IconButton(
+            onPressed: () {
+              _showBlockDialog(context);
+            },
+            icon: Icon(Icons.block, color: Colors.black),
+          ),
+          SizedBox(width: 15),
+        ]
+      ],
+    );
+  }
 
   void _showDeleteConfirmationDialog() {
     showDialog(
@@ -265,6 +289,138 @@ class _PostState extends State<Post> {
       print('Error deleting post: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete post. Please try again.')));
     }
+  }
+
+  /// this function actually has the same function of _deletePost but from others.
+  void _showReportDialog(BuildContext context) {
+    final reporter = FirebaseAuth.instance.currentUser!;
+    final reporterUid = reporter.uid;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text('게시글 신고하기'),
+          content: Text(
+            '게시글을 신고하시겠습니까? '
+            '해당 사용자가 작성한 게시글과 댓글을 더 이상 보지 않게 됩니다. ',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text(
+                '취소',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  // 개발자에게 신고사항 코드.
+                  await FirebaseFirestore.instance.collection('postreport').doc().set({
+                    'title' : widget.title,
+                    'content' : widget.content,
+                    'reporteruid' : reporterUid,
+                    'postauthoruid' : widget.userId,
+                    'timestamp' : FieldValue.serverTimestamp(),
+                  });
+
+                  await FirebaseFirestore.instance.collection('posts').doc(widget.documentId).delete();
+                  Navigator.of(context).pop();
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home(username: widget.username, university: widget.university, bottomIndex: 1)));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('게시글이 정상적으로 신고되었습니다.')));
+                } catch (e) {
+                  print('Error during report: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('신고가 실패하였습니다. 다시 시도해 주세요.')));
+                }
+              },
+              child: Text(
+                '신고하기',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        );
+      },
+    );
+  }
+
+  /// this function actually has the same function of _deletePost but from others.
+  void _showBlockDialog(BuildContext context) {
+    final blocker = FirebaseAuth.instance.currentUser!;
+    final blockerUid = blocker.uid;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text('사용자 차단하기'),
+          content: Text(
+            '사용자를 차단하시겠습니까? '
+            '해당 사용자가 작성한 게시글과 댓글을 더 이상 보지 않게 됩니다. ',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text(
+                '취소',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  // 차단 시, 개발자에게 전달되는 코드
+                  await FirebaseFirestore.instance.collection('block').doc().set({
+                    'title' : widget.title,
+                    'content' : widget.content,
+                    'blockeruid' : blockerUid,
+                    'postauthoruid' : widget.userId,
+                    'timestamp' : FieldValue.serverTimestamp(),
+                  });
+
+                  // 해당 reporter의 document에 접근
+                  // final querySnapshot = await FirebaseFirestore.instance.collection('users').where('userId', isEqualTo: blockerUid).get();
+                  // for(final doc in querySnapshot.docs) {
+                  //  final a = await FirebaseFirestore.instance.collection('users').doc(doc.id).get();
+                  //  print('a" $a');
+                  //}
+
+                  final querySnapshot = await FirebaseFirestore.instance.collection('posts').where('userId', isEqualTo: widget.userId).get();
+
+                  for(final doc in querySnapshot.docs) {
+                    await FirebaseFirestore.instance.collection('posts').doc(doc.id).delete();
+                  }
+
+                  Navigator.of(context).pop();
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home(username: widget.username, university: widget.university, bottomIndex: 1,)));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('사용자가 정상적으로 차단되었습니다.')));
+                } catch (e) {
+                  print('Error during report: $e');
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('차단이 실패하였습니다. 다시 시도해 주세요.')));
+                }
+              },
+              child: Text(
+                '차단하기',
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        );
+      },
+    );
   }
 
   // From here is for _postSection
@@ -525,5 +681,3 @@ class _PostState extends State<Post> {
     );
   }
 }
-
-// modified

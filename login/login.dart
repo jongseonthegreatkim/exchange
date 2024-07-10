@@ -109,7 +109,7 @@ class _LoginState extends State<Login> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => Home(username: doc['username'], university: doc['university']),
+                builder: (context) => Home(username: doc['username'], university: doc['university'], bottomIndex: 0,),
               ),
             );
           }
@@ -180,7 +180,7 @@ class _LoginState extends State<Login> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => Home(username: doc['username'], university: doc['university']),
+                builder: (context) => Home(username: doc['username'], university: doc['university'], bottomIndex: 0),
               ),
             );
           }

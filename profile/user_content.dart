@@ -10,9 +10,11 @@ Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
 
 class UserContent extends StatefulWidget {
-  const UserContent({super.key, required this.isPost});
+  const UserContent({super.key, required this.isPost, required this.username, required this.university});
 
   final bool isPost;
+
+  final String username; final String university;
 
   @override
   State<UserContent> createState() => _UserContentState();
@@ -137,6 +139,8 @@ class _UserContentState extends State<UserContent> {
             userId: userId,
             documentId: documentId, // Pass the unique documentId (the name of document of each post) to distinguish each post
             onPostFixed: _refreshContents,
+            username: widget.username,
+            university: widget.university,
           ),
         ));
       },

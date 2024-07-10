@@ -60,10 +60,7 @@ class _InfoState extends State<Info> {
   @override
   Widget build(BuildContext context) {
     if(universityData == null) {
-      return Center(child: CircularProgressIndicator(
-        color: conceptColor,
-        backgroundColor: backgroundColor,
-      ));
+      return Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor));
     } else {
       return SingleChildScrollView(
         child: Container(
@@ -106,9 +103,9 @@ class _InfoState extends State<Info> {
     late String minutes;
     late String seconds;
     // 숫자의 값이 0일 경우에 화면에 보이지 않게 하는 기술.
-    days = dd!=0 ? '$dd일' : '';
-    hours = hh!=0 ? '$hh시간' : '';
-    minutes = mm!=0 ? '$mm분' : '';
+    days = dd!=0 ? '$dd일 ' : '';
+    hours = hh!=0 ? '$hh시간 ' : '';
+    minutes = mm!=0 ? '$mm분 ' : '';
     seconds = ss!=0 ? '$ss초' : '';
 
     return Column(
@@ -128,7 +125,7 @@ class _InfoState extends State<Info> {
           text: TextSpan(
             children: [
               TextSpan(
-                text: '$days $hours $minutes $seconds',
+                text: '$days$hours$minutes$seconds',
                 style: TextStyle(color: Colors.redAccent, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextSpan(
@@ -194,8 +191,8 @@ class _InfoState extends State<Info> {
     );
   }
 
-  Widget _buildRelativesSection(Map<String, dynamic> relatives) {
-    List<String> areas = relatives.keys.toList();
+  Widget _buildRelativesSection(Map<String, dynamic>? relatives) {
+    List<String> areas = (relatives != null) ? relatives.keys.toList() : [];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +201,6 @@ class _InfoState extends State<Info> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            //Text("지원 가능 대학 목록", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             Text(
               '지원 가능 대학들을 확인해보세요!',
               style: TextStyle(color: Colors.black, fontSize: 20),
@@ -213,14 +209,14 @@ class _InfoState extends State<Info> {
               onTap: () {
                 // 지원 가능 대학 목록 전체 보기
                 Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
-                  relatives: relatives,
+                  relatives: (relatives != null) ? relatives : {},
                   areas: areas,
                 )));
               },
               child: Row(
                 children: [
-                  Text("전체 보기", style: TextStyle(color: Colors.grey, fontSize: 15)),
-                  Icon(Icons.keyboard_arrow_right_sharp, size: 20, color: Colors.grey),
+                  Text("전체 보기", style: TextStyle(fontSize: 15, color: Colors.black)),
+                  Icon(Icons.keyboard_arrow_right_sharp, size: 20, color: Colors.black),
                 ],
               ),
             ),
@@ -229,7 +225,8 @@ class _InfoState extends State<Info> {
         SizedBox(height: 10),
         SizedBox(
           height: 221,
-          child: ListView(
+          child: (relatives != null)
+          ? ListView(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
             children: [
@@ -245,6 +242,12 @@ class _InfoState extends State<Info> {
                 return _buildRelativesCard(area, previewUnivList, relatives);
               }),
             ],
+          )
+          : Container(
+            color: intermediateBackgroundColor,
+            child: Center(
+              child: Text('아직 ${widget.university}의 지원 가능 대학 섹션은 지원되고 있지 않습니다.'),
+            ),
           ),
         ),
       ],
@@ -299,11 +302,12 @@ class _InfoState extends State<Info> {
     );
   }
 
-  Widget _buildCriteriaSection(Map<String, dynamic> criteria) {
+  Widget _buildCriteriaSection(Map<String, dynamic>? criteria) {
 
     // 선발 기준, 제출 가능 어학성적 및 커트라인, 지원 조건
-    List<String> standards = criteria.keys.toList();
+    List<String> standards = (criteria != null) ? criteria.keys.toList() : [];
 
+    /// 이거 실효성 있는 지 체크해야 함.
     List<String> desiredOrder = ['지원 조건', '선발 기준', '제출 가능 어학성적 및 커트라인'];
 
     // desiredOrder에 맞게 standards를 재배열
@@ -317,13 +321,13 @@ class _InfoState extends State<Info> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        //Text("지원 조건 및 선발 기준", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         Text(
           "지원 조건과 선발 기준을 알아봐요!",
           style: TextStyle(color: Colors.black, fontSize: 20),
         ),
         SizedBox(height: 10),
-        ListView(
+        (criteria != null)
+        ? ListView(
           scrollDirection: Axis.vertical,
           physics: NeverScrollableScrollPhysics(),
           shrinkWrap: true,
@@ -337,10 +341,16 @@ class _InfoState extends State<Info> {
               standardContents = sortedEntries.map((entry) => entry.value).toList();
 
               String etc = '내 성적 입력하기';
-              standard == '선발 기준' ? etc = '빈칸' : (standard == '지원 조건' ? etc = '자세히 보기': null);
+              (standard == '선발 기준') ? (etc = '빈칸') : ((standard == '지원 조건') ? (etc = '자세히 보기') : null);
               return _buildCriteriaCard('${widget.university} ', standard, standardContents, etc);
             }),
           ],
+        )
+        : Container(
+          color: intermediateBackgroundColor,
+          child: Center(
+            child: Text('아직 ${widget.university}의 지원 조건/선발 기준 섹션은 지원되고 있지 않습니다.'),
+          ),
         ),
       ],
     );

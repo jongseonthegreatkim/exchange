@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:exchange/login/login.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'user_content.dart';
 import 'suggestion.dart';
+import 'report.dart';
+import 'developer.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
 Color conceptColor = Color(0xFF73A9DA);
@@ -150,7 +153,7 @@ class _ProfileState extends State<Profile> {
         SizedBox(height: 10),
         _buildSettingCard("개인정보 설정", ['로그아웃', '계정 삭제']),
         SizedBox(height: 10),
-        _buildSettingCard("문의", ['문의하기']),
+        _buildSettingCard("Contact Us", ['문의하기', '신고하기', '개발진']),
       ],
     );
   }
@@ -169,15 +172,19 @@ class _ProfileState extends State<Profile> {
             GestureDetector(
               onTap: () async {
                 if(content == '내 게시물') {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: true)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: true, username: widget.username, university: widget.university)));
                 } else if(content == '내 댓글') {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: false)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: false, username: widget.username, university: widget.university)));
                 } else if(content == '로그아웃') {
                   _showLogoutDialog(context); // show the confirmation dialog
                 } else if(content == '계정 삭제') {
                   _showDeleteAccountDialog(context); // show the confirmation dialog
                 } else if(content == '문의하기') {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => Suggestion()));
+                } else if(content == '신고하기') {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => Report()));
+                } else if(content == '개발진') {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => Developer()));
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
                 }
@@ -242,7 +249,11 @@ class _ProfileState extends State<Profile> {
         return AlertDialog(
           backgroundColor: backgroundColor,
           title: Text('계정 삭제'),
-          content: Text('계정을 삭제 하시면, 작성하신 게시글 및 댓글에 더 이상 접근 및 수정이 불가능합니다. 그래도 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'),
+          content: Text(
+            '계정을 삭제 하시면, 작성하신 게시글 및 댓글에 더 이상 접근 및 수정이 불가능합니다. '
+            '그래도 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다. '
+            '삭제를 위해서 재 로그인이 필요합니다.',
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -257,9 +268,31 @@ class _ProfileState extends State<Profile> {
               onPressed: () async {
                 User? user = FirebaseAuth.instance.currentUser;
 
+                /// 재인증 코드 넣기
+
                 if(user != null) {
                   try {
+                    // Re-Authentication
+                    if (user.providerData.any((info) => info.providerId == 'google.com')) {
+                      // Google re-authentication
+                      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+                      final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+
+                      AuthCredential credential = GoogleAuthProvider.credential(
+                        accessToken: googleAuth.accessToken,
+                        idToken: googleAuth.idToken,
+                      );
+
+                      await user.reauthenticateWithCredential(credential);
+                    } else if (user.providerData.any((info) => info.providerId == 'apple.com')) {
+                      // Apple re-authentication
+                      final appleProvider = AppleAuthProvider();
+
+                      await user.reauthenticateWithProvider(appleProvider);
+                    }
+
                     await user.delete(); // Delete the user
+
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => Login()),

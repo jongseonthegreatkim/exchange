@@ -8,6 +8,7 @@ import 'login/get_info.dart';
 import 'info/info.dart';
 import 'community/community.dart';
 import 'profile/profile.dart';
+import 'notification.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
 Color conceptColor = Color(0xFF73A9DA);
@@ -41,24 +42,17 @@ class ExchangeStudentApp extends StatelessWidget {
         future: FirebaseAuth.instance.authStateChanges().first, // Get the current user state
         builder: (context, AsyncSnapshot<User?> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(
-              body: Center(child: CircularProgressIndicator(
-                color: conceptColor,
-                backgroundColor: backgroundColor,
-              )),
-            );
+            return Scaffold(body: Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor)));
           } else if (snapshot.hasData) {
             final User user = snapshot.data!;
             return FutureBuilder<Map<String, String?>>(
               future: _getUserInfoFromFirestore(user.uid),
               builder: (context, firestoreSnapshot) {
                 if (firestoreSnapshot.connectionState == ConnectionState.waiting) {
-                  return Scaffold(
-                    body: Center(child: CircularProgressIndicator(
-                      color: conceptColor,
-                      backgroundColor: backgroundColor,
-                    )),
-                  );
+                  return Scaffold(body: Center(child: CircularProgressIndicator(
+                    color: conceptColor,
+                    backgroundColor: backgroundColor,
+                  )));
                 } else {
                   final userInfo = firestoreSnapshot.data;
                   if (userInfo?['username'] == null || userInfo?['university'] == null) {
@@ -66,7 +60,7 @@ class ExchangeStudentApp extends StatelessWidget {
                     return GetInfo(user: user);
                   } else {
                     // User is logged in and has their data stored in Firestore
-                    return Home(username: userInfo!['username']!, university: userInfo['university']!);
+                    return Home(username: userInfo!['username']!, university: userInfo['university']!, bottomIndex: 0);
                   }
                 }
               },
@@ -84,15 +78,27 @@ class ExchangeStudentApp extends StatelessWidget {
 class Home extends StatefulWidget {
   final String username;
   final String university;
+  final int bottomIndex;
 
-  Home({super.key, required this.username, required this.university});
+  Home({super.key, required this.username, required this.university, required this.bottomIndex});
 
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
-  int _currentIndex = 1;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    _currentIndex = widget.bottomIndex;
+    FlutterLocalNotification.init();
+    Future.delayed(
+      const Duration(seconds: 2),
+      FlutterLocalNotification.requestNotificationPermission(),
+    );
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,21 +132,6 @@ class _HomeState extends State<Home> {
         title: _appBarTitle,
         titleSpacing: _currentIndex == 0 ? 11 : 0,
         centerTitle: false,
-        /*
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: Colors.black),
-            onPressed: () {},
-          ),
-          /*
-          IconButton(
-            icon: Icon(Icons.settings, color: Colors.black),
-            onPressed: () {},
-          ),
-          */
-        ],
-
-         */
       ),
       body: _body(context, _currentIndex),
       bottomNavigationBar: BottomNavigationBar(
@@ -166,7 +157,7 @@ class _HomeState extends State<Home> {
     if (index == 0) {
       return Info(university: widget.university);
     } else if (index == 1) {
-      return Community();
+      return Community(username: widget.username, university: widget.university);
     } else {
       return Profile(username: widget.username, university: widget.university);
     }

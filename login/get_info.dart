@@ -99,6 +99,7 @@ class _GetInfoState extends State<GetInfo> {
                         builder: (context) => Home(
                           username: username,
                           university: university,
+                          bottomIndex: 0,
                         ),
                       ),
                     );

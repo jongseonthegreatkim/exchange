@@ -6,14 +6,14 @@ Color backgroundColor = Color(0xFFF8F7F4);
 Color conceptColor = Color(0xFF73A9DA);
 Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
-class Suggestion extends StatefulWidget {
-  const Suggestion({super.key});
+class Report extends StatefulWidget {
+  const Report({super.key});
 
   @override
-  State<Suggestion> createState() => _SuggestionState();
+  State<Report> createState() => _ReportState();
 }
 
-class _SuggestionState extends State<Suggestion> {
+class _ReportState extends State<Report> {
 
   double _pageMargin = 16;
 
@@ -27,7 +27,7 @@ class _SuggestionState extends State<Suggestion> {
       appBar: AppBar(
         backgroundColor: backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
-        title: Text('건의하기'),
+        title: Text('신고하기'),
         titleSpacing: 0, // To make title to stay at the middle
         actions: [
           GestureDetector(
@@ -52,9 +52,7 @@ class _SuggestionState extends State<Suggestion> {
           SizedBox(width: _pageMargin),
           GestureDetector(
             onTap: () {
-              _saveSuggestion(_titleController.text, _contentController.text);
-              Navigator.of(context).pop(); // 다시 profile.dart로 돌아감.
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('회원님의 건의사항이 정상적으로 등록되었습니다!')));
+              _saveReport(_titleController.text, _contentController.text);
             },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -121,10 +119,9 @@ class _SuggestionState extends State<Suggestion> {
               children: [
                 Expanded(
                   child: Text(
-                    '회원님의 건의사항은 바로 개발자에게 전달되게 됩니다. '
-                    '건의사항에 대한 답변은 하루 이내로 회원님의 이메일로 전달 될 예정입니다. '
-                    '서비스의 품질 개선을 위한 어떠한 의견도 열린 마음으로 받아들이고 있습니다. '
-                    '서비스와 관련 없는 건의사항은 삭제 조치 될 수 있습니다. ',
+                    '부적절한 사용자의 게시글 제목 또는 내용을 적어서 신고해주십시오 '
+                    '회원님의 신고사항은 바로 개발자에게 전달되게 됩니다. '
+                    '신고사항에 대한 답변은 하루 이내로 회원님의 이메일로 전달 될 예정입니다. ',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ),
@@ -136,21 +133,24 @@ class _SuggestionState extends State<Suggestion> {
     );
   }
 
-  Future<void> _saveSuggestion(String newTitle, String newContent) async {
-    final userEmail = FirebaseAuth.instance.currentUser!.email;
+  Future<void> _saveReport(String newTitle, String newContent) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
 
     try {
-      await FirebaseFirestore.instance.collection('suggestions').doc().set({
+      await FirebaseFirestore.instance.collection('reports').doc().set({
         'title' : newTitle,
         'content' : newContent,
-        'userEmail' : userEmail,
+        'uid' : uid,
         'timestamp' : FieldValue.serverTimestamp(),
       });
 
-      //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Post updated successfully!')));
+      Navigator.of(context).pop(); // 다시 profile.dart로 돌아감.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('회원님의 신고가 정상적으로 등록되었습니다.')));
+
     } catch (e) {
-      print('Error during giving a suggestion: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('문의가 실패하였습니다. 다시 시도해 주세요.')));
+      print('Error during report: $e');
+      Navigator.of(context).pop(); // 다시 profile.dart로 돌아감.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('신고가 실패하였습니다. 다시 시도해 주세요.')));
     }
   }
 }

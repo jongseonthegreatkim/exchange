@@ -126,8 +126,8 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
                   Expanded(
                     child: Text(
                       '교환하냥은 모두가 건전하게 활동하는 커뮤니티를 지향합니다. '
-                      '커뮤니티 가이드라인을 준수하지 않는 경우, 게시물이 삭제될 수 있습니다. '
-                      '커뮤니티의 성격과 맞지 않는 정치/시사 주제의 게시물을 삼가 주시기 바랍니다. ',
+                      '부적절하거나 불쾌감을 줄 수 있는 컨텐츠는 유저의 신고 없이도 제재를 받을 수 있습니다. '
+                      '커뮤니티의 성격과 맞지 않는 정치/시사/혐오/차별 주제의 게시물을 삼가 주시기 바랍니다. ',
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
