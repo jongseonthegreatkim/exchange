@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For DateTime
+import 'package:timezone/timezone.dart';
 import 'dart:async'; // For Timer
+import '../notification.dart';
 import 'full_relatives.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
@@ -91,6 +93,7 @@ class _InfoState extends State<Info> {
     dateEntries.sort((a, b) => a.value.compareTo(b.value));
 
     String latestKey = dateEntries[0].key.toString();
+    // 가장 가까운 이벤트의 DateTime 정보. -> FlutterLocalNotification 활용해서, 1일 남았을 때 연락 가게 해줘야 함.
     DateTime latestValue = dateEntries[0].value;
 
     // Use _now that changes every second
@@ -98,6 +101,13 @@ class _InfoState extends State<Info> {
     int hh = latestValue.difference(_now).inHours - dd * 24;
     int mm = latestValue.difference(_now).inMinutes - (hh + dd * 24) * 60;
     int ss = latestValue.difference(_now).inSeconds - (mm + (hh + dd * 24) * 60) * 60;
+
+    // latestValue와 _now가 1일 차이가 되는 순간을 캐치하는 함수 -> 캐치한 뒤, FlutterLocalNotification을 활용해 Push Notification을 사용자에게 보내준다.
+    // foregroundNotification(latestKey, dd, hh, mm, ss);
+
+    // push notification generator (make push noti 1 day prior of latest event time (latestValue))
+    scheduleNotification(latestKey, latestValue);
+
     late String days;
     late String hours;
     late String minutes;
@@ -188,6 +198,26 @@ class _InfoState extends State<Info> {
           ),
         ],
       ),
+    );
+  }
+
+  /*
+  void foregroundNotification(String latestKey, int dd, int hh, int mm, int ss) {
+    if(dd == 1 && hh == 0 && mm == 0 && ss == 0 ) {
+        FlutterLocalNotification.showNotification('${widget.university} $latestKey 하루 전', '하루 밖에 안 남았어요!!');
+    }
+  }
+  */
+
+  void scheduleNotification(String latestKey, DateTime latestValue) {
+    DateTime scheduledTime = latestValue.subtract(Duration(days: 1));
+
+    TZDateTime tzScheduledTime = TZDateTime.from(scheduledTime, local);
+
+    FlutterLocalNotification.scheduleNotification(
+      '${widget.university} $latestKey 하루 전',
+      '하루 밖에 안 남았어요! 어서 일정을 확인해 보세요!',
+      tzScheduledTime,
     );
   }
 

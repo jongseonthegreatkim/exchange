@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For user authentication
 import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart';
 import '../main.dart';
+import '../notification.dart';
 import 'edit_post.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
@@ -14,8 +16,8 @@ class Post extends StatefulWidget {
   const Post({super.key,
     required this.title,
     required this.content,
-    required this.timestamp,
-    required this.userId,
+    required this.timestamp, // 작성 시간
+    required this.userId, // 작성자의 uid
     required this.documentId,
     required this.onPostFixed,
     required this.username, required this.university,
@@ -29,6 +31,7 @@ class Post extends StatefulWidget {
   final Function onPostFixed; // To refresh community.dart when we edit / delete the post
 
   final String username; final String university; // Used for block feature.
+  // university is also used for Push Notification feature. You can't easily delete this line.
 
   @override
   State<Post> createState() => _PostState();
@@ -44,15 +47,6 @@ class _PostState extends State<Post> {
   List<DocumentSnapshot> _comments = [];
 
   String? _replyToCommentId; // Track the comment ID being replied to (used to store in Firestore)
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize state variable with the widget's initial values
-    _currentTitle = widget.title;
-    _currentContent = widget.content;
-    _reactionsFuture = _fetchReactions();
-  }
 
   Future<List<DocumentSnapshot>> _fetchReactions() async {
     try{
@@ -140,6 +134,30 @@ class _PostState extends State<Post> {
     //print('numberMap: $numberMap');
 
     return numberMap[reactorId]!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize state variable with the widget's initial values
+    _currentTitle = widget.title;
+    _currentContent = widget.content;
+    _reactionsFuture = _fetchReactions();
+
+    // Add listener for the counter field -> give notification for post author
+    /*
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .snapshots()
+        .listen((DocumentSnapshot snapshot) {
+      if (snapshot.exists) {
+        var data = snapshot.data() as Map<String, dynamic>;
+        if (data['counter'] != null) {
+          postAuthorNotification();
+        }
+      }
+    });*/
   }
 
   @override
@@ -598,6 +616,7 @@ class _PostState extends State<Post> {
     TextEditingController _inputController = TextEditingController();
 
     IconButton _suffixIconButton = IconButton(
+      icon: Icon(Icons.send, color: conceptColor),
       onPressed: () async {
         String content = _inputController.text.trim();
 
@@ -606,7 +625,7 @@ class _PostState extends State<Post> {
 
         if (content.isNotEmpty) {
           if (_replyToCommentId == null) {
-            // Add a new comment via Firestore.
+            // _replyToCommentId가 null => 댓글. Add a new comment via Firestore.
             await FirebaseFirestore.instance
                 .collection('posts')
                 .doc(widget.documentId)
@@ -617,7 +636,7 @@ class _PostState extends State<Post> {
               'userId': user?.uid,
             });
           } else {
-            // Add a reply to a specific comment via Firestore
+            // _replyToCommentId가 존재 => 대댓글. Add a reply to a specific comment via Firestore
             await FirebaseFirestore.instance
                 .collection('posts')
                 .doc(widget.documentId)
@@ -630,7 +649,7 @@ class _PostState extends State<Post> {
               'userId': user?.uid,
             });
 
-            // Reset _replyToCommentId after sending a reply
+            // 다시 댓글 상태로 변경. Reset _replyToCommentId after sending a reply
             setState(() {
               _replyToCommentId = null;
             });
@@ -645,9 +664,15 @@ class _PostState extends State<Post> {
 
           // Refresh the comments list
           setState(() {});
+
+          // To give Notification ONLY to Post Author, increment counter field for the post author
+          /*
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(widget.userId)
+              .update({'counter': FieldValue.increment(1)});*/
         }
       },
-      icon: Icon(Icons.send, color: conceptColor),
     );
 
     return Container(
@@ -680,4 +705,20 @@ class _PostState extends State<Post> {
       ),
     );
   }
+
+  /*
+  void postAuthorNotification() {
+    // 이 함수는 애초에 한 번만 실행됨.
+    // 이 함수가 실행되고 5초 뒤를 scheduledTime으로 설정해서
+    // 5초 뒤에 Push Notification이 뜨게 설정.
+    DateTime scheduledTime = DateTime.now().add(Duration(seconds: 5));
+
+    TZDateTime tzScheduledTime = TZDateTime.from(scheduledTime, local);
+
+    FlutterLocalNotification.scheduleNotification(
+      '어머 너 게시글에 댓글 달렸어',
+      widget.title, // post의 제목 전달.
+      tzScheduledTime,
+    );
+  }*/
 }

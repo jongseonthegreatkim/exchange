@@ -26,10 +26,10 @@ class _GetInfoState extends State<GetInfo> {
   Future<void> _saveUserInfoToFirestore(String username, String university) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     await users.doc(widget.user.uid).set({
-      'uid': widget.user.uid,
-      'email': widget.user.email,
-      'university': university,
-      'username': username,
+      'uid' : widget.user.uid,
+      'email' : widget.user.email,
+      'university' : university,
+      'username' : username,
     });
   }
 
