@@ -121,6 +121,7 @@ class _InfoState extends State<Info> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        /*
         /// example code
         ElevatedButton(
           onPressed: () async {
@@ -132,6 +133,7 @@ class _InfoState extends State<Info> {
           child: Text('Add Test Message'),
         ),
         /// example code
+        */
         //Text("모집 일정 안내", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         FittedBox(
           child: Text(

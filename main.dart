@@ -9,7 +9,6 @@ import 'login/get_info.dart';
 import 'info/info.dart';
 import 'community/community.dart';
 import 'profile/profile.dart';
-import 'notification.dart'; // For flutter_local_notification -> foreground notification
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
@@ -18,68 +17,21 @@ Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
 
 void main() async {
-  print('main function started');
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  /*
-  // FCM
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-  // 권한 요청
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    announcement: false,
-    badge: true,
-    carPlay: false,
-    criticalAlert: false,
-    provisional: false,
-    sound: true,
-  );
-
-  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    print('User granted permission');
-  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-    print('User granted provisional permission');
-  } else {
-    print('User declined or has not accepted permission');
-  }
-
-  // foreground notification 초기화
-  await FlutterLocalNotification.init();
-
-  // Foreground 메시지 처리
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print('Foreground 메시지 수신: ${message.messageId}');
-    if (message.notification != null) {
-      print('알림: ${message.notification!.title}, ${message.notification!.body}');
-      FlutterLocalNotification.showNotification(
-        message.notification!.title ?? '제목 없음',
-        message.notification!.body ?? '내용 없음',
-      );
-    }
-  });
-
-  // 백그라운드 메시지 핸들러 설정
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  */
 
   initializeTimeZones();
 
   runApp(ExchangeStudentApp());
 }
 
-// 백그라운드 메시지 핸들러
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print('Background 메시지 수신: ${message.messageId}');
-
-  FlutterLocalNotification.showNotification(
-      message.notification?.title ?? 'No Title',
-      message.notification?.body ?? 'No Body'
-  );
 }
 
 class ExchangeStudentApp extends StatelessWidget {
@@ -150,58 +102,65 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late int _currentIndex;
 
-  /*
-  void _setupFCM() async {
-    String? uid = FirebaseAuth.instance.currentUser?.uid;
-
-    // Get the FCM token
-    String? token = await FirebaseMessaging.instance.getToken();
-    print('FCM Token: $token');
-
-    // Save the token to Firestore or your server if needed
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      'fcmToken' : token,
-    });
-
-    // Listen to foreground messages
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Got a message whilst in the foreground!');
-      print('Message data: ${message.data}');
-
-      if (message.notification != null) {
-        print('Message also contained a notification: ${message.notification}');
-        FlutterLocalNotification.showNotification(
-            message.notification?.title ?? 'No Title',
-            message.notification?.body ?? 'No Body'
-        );
-      }
-    });
-
-    // Listen to background messages
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  }
-  */
-
   @override
   void initState() {
     _currentIndex = widget.bottomIndex;
 
-    /*
-    // foreground push notification
-    FlutterLocalNotification.init();
-    Future.delayed(
-      const Duration(seconds: 2),
-      FlutterLocalNotification.requestNotificationPermission(),
-    );
-
-    // scheduled push notification (= background & terminated push notification)
-    initializeTimeZones();
-
-    // Get FCM Token of user and store it in Firestore.
-    _setupFCM();
-    */
+    initializeFirebaseMessaging();
 
     super.initState();
+  }
+
+  void initializeFirebaseMessaging() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    // Request permission for iOS
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true, announcement: false, badge: true, carPlay: false,
+      criticalAlert: false, provisional: false, sound: true,
+    );
+
+    if(settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('User granted permission');
+    } else if(settings.authorizationStatus == AuthorizationStatus.provisional) {
+      print('User granted provisional permission');
+    } else {
+      print('User declined or has not accepted permission');
+    }
+
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Received a message in the foreground!');
+      if (message.notification != null) {
+        print('Message also contained a notification: ${message.notification}');
+      }
+    });
+
+    // Handle messages when the app is opened from a terminated state
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('A new onMessageOpenedApp event was published!');
+      if (message.notification != null) {
+        print('Message also contained a notification: ${message.notification}');
+      }
+    });
+
+    // Get the token each time the application loads
+    messaging.getToken().then((token) {
+      print("FirebaseMessaging token: $token");
+      // Save the token to Firestore if necessary
+      saveTokenToFirestore(token);
+    });
+  }
+
+  void saveTokenToFirestore(String? token) async {
+    if (token != null) {
+      String? uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await FirebaseFirestore.instance.collection('users').doc(uid).update({
+          'fcmToken': token,
+        });
+      }
+    }
   }
 
   @override
