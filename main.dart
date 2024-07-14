@@ -18,9 +18,13 @@ Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
 
 void main() async {
+  print('main function started');
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
+  /*
   // FCM
   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
@@ -46,8 +50,23 @@ void main() async {
   // foreground notification 초기화
   await FlutterLocalNotification.init();
 
+  // Foreground 메시지 처리
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Foreground 메시지 수신: ${message.messageId}');
+    if (message.notification != null) {
+      print('알림: ${message.notification!.title}, ${message.notification!.body}');
+      FlutterLocalNotification.showNotification(
+        message.notification!.title ?? '제목 없음',
+        message.notification!.body ?? '내용 없음',
+      );
+    }
+  });
+
   // 백그라운드 메시지 핸들러 설정
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  */
+
+  initializeTimeZones();
 
   runApp(ExchangeStudentApp());
 }
@@ -55,7 +74,7 @@ void main() async {
 // 백그라운드 메시지 핸들러
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print('Handling a background message: ${message.messageId}');
+  print('Background 메시지 수신: ${message.messageId}');
 
   FlutterLocalNotification.showNotification(
       message.notification?.title ?? 'No Title',
@@ -131,6 +150,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late int _currentIndex;
 
+  /*
   void _setupFCM() async {
     String? uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -160,11 +180,13 @@ class _HomeState extends State<Home> {
     // Listen to background messages
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
+  */
 
   @override
   void initState() {
     _currentIndex = widget.bottomIndex;
 
+    /*
     // foreground push notification
     FlutterLocalNotification.init();
     Future.delayed(
@@ -177,6 +199,7 @@ class _HomeState extends State<Home> {
 
     // Get FCM Token of user and store it in Firestore.
     _setupFCM();
+    */
 
     super.initState();
   }
