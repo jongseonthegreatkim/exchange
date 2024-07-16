@@ -22,40 +22,66 @@ class UserContent extends StatefulWidget {
 
 class _UserContentState extends State<UserContent> {
   List<DocumentSnapshot> _userPosts = []; // post that user wrote
-  List<DocumentSnapshot> _userComments = []; // comment that user wrote
-  List<String> _userRef = []; // _userComments의 post title
+  List<DocumentSnapshot> _userReactions = []; // reactions that user wrote
 
   bool _isLoading = true;
 
   Future<void> _fetchUserContent() async {
-    final user = FirebaseAuth.instance.currentUser!;
+    final userId = FirebaseAuth.instance.currentUser!.uid;
 
-    final userId = user.uid;
-
-    // Fetch user's post orderd by timestamp
+    // Fetch user's posts
     final QuerySnapshot postsSnapshot = await FirebaseFirestore.instance
         .collection('posts')
         .where('userId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
         .get();
 
-    // Fetch user's comment and its post title
+    // Fetch user's comments
     final QuerySnapshot commentsSnapshot = await FirebaseFirestore.instance
         .collectionGroup('comments') // Using collectionGroup to search in all comments subcollections
         .where('userId', isEqualTo: userId)
         .orderBy('timestamp', descending: true)
         .get();
 
+    // Fetch user's replies
+    final QuerySnapshot repliesSnapshot = await FirebaseFirestore.instance
+        .collectionGroup('replies')
+        .where('userId', isEqualTo: userId)
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    // 한 게시글에 여러 리액션 했다고 게시글 여러 번 fetch하지 않게 하는 코드
+    Set<String> titlesSet = {};
+    List<DocumentSnapshot> temp = [];
+
+    // 댓글 파트
     for(var comment in commentsSnapshot.docs) {
-      // Get the parent post's document ID from the comment's reference path
-      var parentSnapshot = await comment.reference.parent.parent!.get();
-      var theTitle = parentSnapshot['title'] ?? 'No Title';
-      _userRef.add(theTitle);
+      var _parentSnapshot = await comment.reference.parent.parent!.get();
+      var _title = _parentSnapshot['title'];
+
+      // 새로운 제목이라면 (새 게시글에 대한 댓글이라면)
+      if(!titlesSet.contains(_title)) {
+        titlesSet.add(_title); // 그 제목을 제목검열세트에 추가하고
+        temp.add(_parentSnapshot); // 해당 snapshot은 _userReactions 쪽으로 전달
+      }
+    }
+
+    // 대댓글 파트
+    for(var reply in repliesSnapshot.docs) {
+      var _parentSnapshot = await reply.reference.parent.parent!.get();
+      var _grandparentSnapshot = await _parentSnapshot.reference.parent.parent!.get();
+      var _title = _grandparentSnapshot['title'];
+
+      // 새로운 제목이라면 (새 게시글에 대한 대댓글이라면)
+      if(!titlesSet.contains(_title)) {
+        titlesSet.add(_title); // 그 제목을 제목검열세트에 추가하고
+        temp.add(_grandparentSnapshot); // 해당 snapshot은 _userReactions 쪽으로 전달
+      }
     }
 
     setState(() {
-      _userPosts = postsSnapshot.docs;
-      _userComments = commentsSnapshot.docs;
+      _userPosts = postsSnapshot.docs; // 내가 쓴 글 업데이트
+      _userReactions = temp; // 내가 댓글/대댓글 쓴 글 업데이트
       _isLoading = false;
     });
   }
@@ -65,31 +91,34 @@ class _UserContentState extends State<UserContent> {
     // Because this fuction is called when post is Fixed.
     setState(() {
       _userPosts.clear();
-      _userComments.clear();
-      _userRef.clear();
+      _userReactions.clear();
     });
     await _fetchUserContent();
   }
 
   @override
   void initState() {
-    super.initState();
     _fetchUserContent(); // fetch user's content when initially draw the screen.
-
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
 
     // isPost의 값에 따라, _usetContent에 _userPosts를 집어넣을 것인지 _userComments를 집어넣을 것인지 결정
-    List<DocumentSnapshot> _userContent = widget.isPost == true ? _userPosts : _userComments;
+    // _userContent[index]의 구성
+    // 'title': 포스트의 제목
+    // 'content': 포스트의 내용
+    // 'userId': 포스트 작성자 ID
+    // 'timestamp': 포스트 작성 시간
+    List<DocumentSnapshot> _userContent = widget.isPost ? _userPosts : _userReactions;
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
-        title: Text(widget.isPost == true ? '내 게시물' : '내 댓글'),
+        title: Text(widget.isPost ? '내가 쓴 글' : '내가 댓글 쓴 글'),
       ),
       body: _isLoading
       ? Center(child: CircularProgressIndicator(
@@ -105,20 +134,13 @@ class _UserContentState extends State<UserContent> {
               itemBuilder: (context, index) {
                 var post = _userContent[index];
 
-                // Conditionally define title based on widget.isPost
-                String title;
-                if (widget.isPost) {
-                  title = post['title'] ?? 'No Title';
-                } else {
-                  title = _userRef[index]; // Use the parent post title from _userRef
-                }
-
-                String content = post['content'] ?? 'No Content';
+                String title = post['title'];
+                String content = post['content'];
                 DateTime timestamp = (post['timestamp'] as Timestamp).toDate();
-                String userId = post['userId'] ?? 'Anonymous';
+                String userId = post['userId'];
                 String documentId = post.id;
 
-                return _buildContentCard(title, content, timestamp, userId, documentId);
+                return _buildPostCard(title, content, timestamp, userId, documentId);
               },
             ),
           ),
@@ -127,8 +149,7 @@ class _UserContentState extends State<UserContent> {
     );
   }
 
-  // Word 'content' is used as it might be post or comment
-  Widget _buildContentCard(String title, String content, DateTime timestamp, String userId, String documentId) {
+  Widget _buildPostCard(String title, String content, DateTime timestamp, String userId, String documentId) {
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (context) =>

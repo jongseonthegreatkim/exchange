@@ -147,13 +147,13 @@ class _ProfileState extends State<Profile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSettingCard("내 활동", ["내 게시물", '내 댓글']),
+        _buildSettingCard("내 활동", ["내가 쓴 글", '내가 댓글 쓴 글']),
         SizedBox(height: 10),
-        _buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
-        SizedBox(height: 10),
-        _buildSettingCard("개인정보 설정", ['로그아웃', '계정 삭제']),
+        _buildSettingCard("계정 설정", ['로그아웃', '계정 삭제']),
         SizedBox(height: 10),
         _buildSettingCard("Contact Us", ['문의하기', '신고하기', '개발진']),
+        SizedBox(height: 10),
+        _buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
       ],
     );
   }
@@ -171,9 +171,9 @@ class _ProfileState extends State<Profile> {
           ...contents.map((content) =>
             GestureDetector(
               onTap: () async {
-                if(content == '내 게시물') {
+                if(content == '내가 쓴 글') {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: true, username: widget.username, university: widget.university)));
-                } else if(content == '내 댓글') {
+                } else if(content == '내가 댓글 쓴 글') {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => UserContent(isPost: false, username: widget.username, university: widget.university)));
                 } else if(content == '로그아웃') {
                   _showLogoutDialog(context); // show the confirmation dialog

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For user authentication
 import 'package:intl/intl.dart';
-import 'package:timezone/timezone.dart';
 import '../main.dart';
-import '../notification.dart';
 import 'edit_post.dart';
 
 Color backgroundColor = Color(0xFFF8F7F4);
@@ -20,7 +18,7 @@ class Post extends StatefulWidget {
     required this.userId, // 작성자의 uid
     required this.documentId,
     required this.onPostFixed,
-    required this.username, required this.university,
+    required this.username, required this.university, // 사용자의 이름과 사용자의 대학
   });
 
   final String title;
@@ -42,7 +40,8 @@ class _PostState extends State<Post> {
   late String _currentContent; // State variable for the content
 
   bool _isFetching = true;
-  late Future<List<DocumentSnapshot>> _reactionsFuture; // Exist for prevent infinite re-building the UI
+  late Future<List<DocumentSnapshot>> _reactionsFuture; // Exist for prevent infinite re-building the UI (counterpart for _fetchReactions)
+  late Future<int> _likesFuture; // Exist for prevent infinite re-building the UI (counterpart for _fetchLikes)
 
   List<DocumentSnapshot> _comments = [];
 
@@ -66,12 +65,6 @@ class _PostState extends State<Post> {
 
       allReactions.addAll(commentSnapshot.docs);
 
-      /*
-    for(var cs in allReactions) {
-      print('Completed Comment Part: ${cs['userId'].toString().substring(0, 5)}');
-    }
-    */
-
       // Fetch replies for each comment
       for (var comment in commentSnapshot.docs) {
         QuerySnapshot replySnapshot = await comment.reference
@@ -90,12 +83,6 @@ class _PostState extends State<Post> {
         return aTimestamp.compareTo(bTimestamp);
       });
 
-      /*
-    for (var ar in allReactions) {
-      print('Completed Reply & Compare Part: ${ar['userId'].toString().substring(0, 5)}');
-    }
-    */
-
       setState(() {
         _isFetching = false;
         _comments = commentSnapshot.docs;
@@ -105,7 +92,6 @@ class _PostState extends State<Post> {
 
     } catch (e) {
       print('Error in _fetchReactions: $e');
-
       return [];
     }
   }
@@ -142,22 +128,69 @@ class _PostState extends State<Post> {
     // Initialize state variable with the widget's initial values
     _currentTitle = widget.title;
     _currentContent = widget.content;
-    _reactionsFuture = _fetchReactions();
+    _reactionsFuture = _fetchReactions(); // connect _fetchReactions with its counterpart
+    _likesFuture = _fetchLikes(); // connect _fetchLikes with its counterpart
+  }
 
-    // Add listener for the counter field -> give notification for post author
-    /*
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .snapshots()
-        .listen((DocumentSnapshot snapshot) {
-      if (snapshot.exists) {
-        var data = snapshot.data() as Map<String, dynamic>;
-        if (data['counter'] != null) {
-          postAuthorNotification();
-        }
+  Future<int> _fetchLikes() async {
+    QuerySnapshot likesSnapshot = await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(widget.documentId)
+        .collection('likes')
+        .get();
+
+    setState(() {});
+
+    return likesSnapshot.size;
+  }
+
+  void _incrementLikes() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if(user == null) return;
+
+    DocumentReference likesRef = FirebaseFirestore.instance
+        .collection('posts')
+        .doc(widget.documentId)
+        .collection('likes')
+        .doc(user.uid);
+
+    DocumentSnapshot likesSnapshot = await likesRef.get();
+
+    if(!likesSnapshot.exists) {
+      // Initial like from this user
+      await likesRef.set({
+        'timestamp' : Timestamp.now(),
+      });
+      setState(() {
+        _likesFuture = _fetchLikes(); // update likes count for UI
+      });
+    } else {
+      // Already liked
+      _showMultiLikeDialog(context);
+    }
+  }
+
+  void _showMultiLikeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: backgroundColor,
+          title: Text('두 번은 너무 과해 :)'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('넴..', style: TextStyle(color: conceptColor)),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        );
       }
-    });*/
+    );
   }
 
   @override
@@ -451,9 +484,10 @@ class _PostState extends State<Post> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(_currentTitle, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          SizedBox(height: 14),
+          SizedBox(height: 15),
           Text(_currentContent, style: TextStyle(fontSize: 17)),
-          SizedBox(height: 14),
+          SizedBox(height: 15),
+          // 익명 & 작성시간
           Row(
             children: [
               Text(DateFormat('MM/dd HH:mm').format(widget.timestamp), style: TextStyle(fontSize: 15, color: Colors.black54)),
@@ -464,6 +498,54 @@ class _PostState extends State<Post> {
                 color: Colors.black54,
               ),
               Text('익명', style: TextStyle(fontSize: 15, color: Colors.black54, overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+          SizedBox(height: 15),
+          Row(
+            children: [
+              // 좋아요
+              GestureDetector(
+                onTap: _incrementLikes,
+                child: Row(
+                  children: [
+                    Icon(Icons.thumb_up, size: 15, color: conceptColor),
+                    SizedBox(width: 5),
+                    FutureBuilder<int>(
+                      future: _likesFuture,
+                      builder: (context, snapshot) {
+                        if(snapshot.connectionState == ConnectionState.waiting) {
+                          return Container(); // Not to mess up the UI
+                        } else if(snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
+                        } else {
+                          return Text('${snapshot.data}', style: TextStyle(fontSize: 15, color: Colors.black));
+                        }
+                      },
+                    ),
+                    SizedBox(width: 10),
+                  ],
+                ),
+              ),
+              // 댓글
+              FutureBuilder<List<DocumentSnapshot>>(
+                future: _reactionsFuture, // allReactions을 결과로 도출. 이의 길이를 사용.
+                builder: (context, snapshot) {
+                  if(snapshot.connectionState == ConnectionState.waiting) {
+                    return Container(); // Not to mess up the UI
+                  } else if(snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  } else {
+                    int reactionsCount = snapshot.data?.length ?? 0;
+                    return Row(
+                      children: [
+                        Icon(Icons.comment, size: 15, color: conceptColor),
+                        SizedBox(width: 5),
+                        Text('$reactionsCount', style: TextStyle(fontSize: 15, color: Colors.black)),
+                      ],
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ],
@@ -594,17 +676,17 @@ class _PostState extends State<Post> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(content),
+          Text(content, style: TextStyle(fontSize: 15, color: Colors.black)),
           Row(
             children: [
-              Text(DateFormat('MM/dd HH:mm').format(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
+              Text(DateFormat('MM/dd HH:mm').format(timestamp), style: TextStyle(fontSize: 15, color: Colors.black38)),
               Container(
                 margin: EdgeInsets.symmetric(horizontal: 5),
                 width: 0.5,
                 height: 10,
                 color: Colors.black38,
               ),
-              Text(anonymous, style: TextStyle(fontSize: 14, color: Colors.black38, overflow: TextOverflow.ellipsis)),
+              Text(anonymous, style: TextStyle(fontSize: 15, color: Colors.black38, overflow: TextOverflow.ellipsis)),
             ],
           ),
         ],
@@ -705,20 +787,4 @@ class _PostState extends State<Post> {
       ),
     );
   }
-
-  /*
-  void postAuthorNotification() {
-    // 이 함수는 애초에 한 번만 실행됨.
-    // 이 함수가 실행되고 5초 뒤를 scheduledTime으로 설정해서
-    // 5초 뒤에 Push Notification이 뜨게 설정.
-    DateTime scheduledTime = DateTime.now().add(Duration(seconds: 5));
-
-    TZDateTime tzScheduledTime = TZDateTime.from(scheduledTime, local);
-
-    FlutterLocalNotification.scheduleNotification(
-      '어머 너 게시글에 댓글 달렸어',
-      widget.title, // post의 제목 전달.
-      tzScheduledTime,
-    );
-  }*/
 }

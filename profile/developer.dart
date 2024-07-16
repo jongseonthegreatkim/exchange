@@ -198,9 +198,15 @@ class _DeveloperState extends State<Developer> {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
                 }
               },
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Text(content, style: TextStyle(fontSize: 16)),
+              child: Row(
+                children: [
+                  Image.asset('assets/images/instagram_logo.png', width: 20),
+                  SizedBox(width: 10),
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Text(content, style: TextStyle(fontSize: 16)),
+                  ),
+                ],
               ),
             ),
           ),

@@ -9,27 +9,39 @@ Color conceptBackgroundColor = Color(0xFFF5DADA);
 Color intermediateBackgroundColor = Color(0xFFfbfff8);
 
 class Community extends StatefulWidget {
-  const Community({super.key, required this.username, required this.university});
+  // 강제가 아닌 경우에는 required 안 넣는 구나.
+  const Community({super.key, required this.username, required this.university, required this.searchField});
 
   final String username;
   final String university;
+  final String searchField; // TextFormField의 text
 
   @override
   State<Community> createState() => _CommunityState();
 }
 
 class _CommunityState extends State<Community> {
-
   final int _postLimit = 10; // Number of posts to fetch per batch // 추후에 이 값은 50으로 올리기
   final List<DocumentSnapshot> _posts = []; // To store fetched posts
   bool _isFetching = true; // To indicate if posts are being fetched
   bool _hasMorePosts = true; // To indicate if there are more posts to fetch
   DocumentSnapshot? _lastDocument; // To track the last fetched document
 
+  Map<String, int> likesCountCache = {};
+  Map<String, int> reactionsCountCache = {};
+
   @override
   void initState() {
     super.initState();
     _fetchInitialPosts(); // Fetch posts when the screen initializes.
+  }
+
+  // ensure update the UI whenever 'widget.searchField' has been changed.
+  @override
+  void didUpdateWidget(Community oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if(oldWidget.searchField != widget.searchField)
+      _refreshPosts();
   }
 
   // 종국적으로 _fetchInitialPosts와 _fetchMorePosts의 통합을 추진해야 한다
@@ -43,17 +55,28 @@ class _CommunityState extends State<Community> {
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('posts')
           .orderBy('timestamp', descending: true)
-          .limit(_postLimit) // Limit to _postLimit posts
-          .get();
+          .limit(_postLimit)
+          .get(); // Limit to _postLimit posts
+
+      List<DocumentSnapshot> filteredDocs = querySnapshot.docs.where((doc) {
+        String title = doc['title'];
+        String content = doc['content'];
+        if(widget.searchField.isNotEmpty) {
+          return title.contains(widget.searchField) || content.contains(widget.searchField);
+        } else {
+          return true;
+        }
+      }).toList();
 
       // Store the fetched posts in a state variable
-      if(querySnapshot.docs.isNotEmpty) {
+      if(filteredDocs.isNotEmpty) {
         if(mounted) { // check if the widget is still mounted
           setState(() {
-            _posts.addAll(querySnapshot.docs); // Add all fetched documents to _posts
-            _lastDocument = querySnapshot.docs.last;
+            _posts.addAll(filteredDocs); // Add all fetched documents to _posts
+            _lastDocument = filteredDocs.last;
             _isFetching = false; // Set fetching to false once data is loaded
           });
+          _fetchAdditionalData(filteredDocs);
         }
       } else {
         if(mounted) { // check if the widget is still mounted
@@ -89,13 +112,24 @@ class _CommunityState extends State<Community> {
           .limit(_postLimit)
           .get();
 
-      if(querySnapshot.docs.isNotEmpty) {
+      List<DocumentSnapshot> filteredDocs = querySnapshot.docs.where((doc) {
+        String title = doc['title'];
+        String content = doc['content'];
+        if(widget.searchField.isNotEmpty) {
+          return title.contains(widget.searchField) || content.contains(widget.searchField);
+        } else {
+          return true;
+        }
+      }).toList();
+
+      if(filteredDocs.isNotEmpty) {
         if(mounted) { // check if the widget is still mounted
           setState(() {
-            _posts.addAll(querySnapshot.docs);
-            _lastDocument = querySnapshot.docs.last;
+            _posts.addAll(filteredDocs);
+            _lastDocument = filteredDocs.last;
             _isFetching = false;
           });
+          _fetchAdditionalData(filteredDocs);
         }
       } else {
         if(mounted) { // check if the widget is still mounted
@@ -126,19 +160,46 @@ class _CommunityState extends State<Community> {
     await _fetchInitialPosts();
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if(difference.inMinutes < 1) {
-      return "방금 전";
-    } else if (difference.inMinutes < 60) {
-      return "${difference.inMinutes}분 전";
-    } else if (difference.inHours < 24) {
-      return "${difference.inHours}시간 전";
-    } else {
-      return "${difference.inDays}일 전";
+  // called in _fetchInitialPosts and _fetchMorePosts
+  Future<void> _fetchAdditionalData(List<DocumentSnapshot> posts) async {
+    for (var post in posts) {
+      String postId = post.id;
+      if (!likesCountCache.containsKey(postId)) {
+        likesCountCache[postId] = await _fetchLikesCount(postId);
+      }
+      if (!reactionsCountCache.containsKey(postId)) {
+        reactionsCountCache[postId] = await _fetchReactionsCount(postId);
+      }
     }
+    setState(() {});
+  }
+
+  // called in _fetchAdditionalData
+  Future<int> _fetchLikesCount(String postId) async {
+    QuerySnapshot likesSnapshot = await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postId)
+        .collection('likes')
+        .get();
+
+    return likesSnapshot.size;
+  }
+  Future<int> _fetchReactionsCount(String postId) async {
+    QuerySnapshot commentSnapshot = await FirebaseFirestore.instance
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .get();
+
+    int commentCount = commentSnapshot.size;
+
+    int replyCount = 0;
+    for(var comment in commentSnapshot.docs) {
+      QuerySnapshot replySnapshot = await comment.reference.collection('replies').get();
+      replyCount += replySnapshot.size;
+    }
+
+    return commentCount + replyCount;
   }
 
   @override
@@ -146,10 +207,7 @@ class _CommunityState extends State<Community> {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: _isFetching && _posts.isEmpty
-      ? Center(child: CircularProgressIndicator(
-        color: conceptColor,
-        backgroundColor: backgroundColor,
-      ))
+      ? Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor))
       : RefreshIndicator(
         onRefresh: _refreshPosts,
         color: conceptColor, // 리프레시 하면 상단에 뜨는 CircularProgressIndicator의 색상.
@@ -168,13 +226,47 @@ class _CommunityState extends State<Community> {
             itemCount: _posts.length,
             itemBuilder: (context, index) {
               var post = _posts[index];
-              var title = post['title'] ?? 'No title';
-              var content = post['content'] ?? 'No Content';
-              var timestamp = (post['timestamp'] as Timestamp).toDate();
-              var userId = post['userId'] ?? 'Anonymous';
-              var documentId = post.id;
+              var title = post['title']; // 제목
+              var content = post['content']; // 내용
+              var timestamp = (post['timestamp'] as Timestamp).toDate(); // 작성 시간
+              var userId = post['userId']; // 작성자 UID
+              var postId = post.id; // 문서 ID
 
-              return _buildPostCard(title, content, timestamp, userId, documentId);
+              int likesCount = likesCountCache[postId] ?? 0;
+              int reactionsCount = reactionsCountCache[postId] ?? 0;
+
+              return _buildPostCard(title, content, timestamp, userId, postId, likesCount, reactionsCount);
+
+              /*
+              // As we using _fetchReactionsCount function that returns 'Future<int>' type, we need to use FutureBUilder
+              return FutureBuilder<int>(
+                future: _fetchReactionsCount(postId),
+                builder: (context, reactionsSnapshot) {
+                  if(reactionsSnapshot.connectionState == ConnectionState.waiting) {
+                    return Container(); // 여기에 CircularProgressInciator 넣으면 UI가 너무 지저분해 보임.
+                  } else if(reactionsSnapshot.hasError) {
+                    return Text('Error: ${reactionsSnapshot.error}');
+                  } else {
+                    int reactionsCount = reactionsSnapshot.data ?? 0;
+                    // As we using _fetchLikesCount function that return 'Future<int>' type, we need to use FutureBuilder
+                    return FutureBuilder<int>(
+                      future: _fetchLikesCount(postId),
+                      builder: (context, likesSnapshot) {
+                        if(likesSnapshot.connectionState == ConnectionState.waiting) {
+                          return Container(); // 여기에 CircularProgressInciator 넣으면 UI가 너무 지저분해 보임.
+                        } else if(likesSnapshot.hasError) {
+                          return Text('Error: ${likesSnapshot.error}');
+                        } else {
+                          int likesCount = likesSnapshot.data ?? 0;
+                          return _buildPostCard(title, content, timestamp, userId, postId, likesCount, reactionsCount);
+                        }
+                      },
+                    );
+                  }
+                },
+              );
+
+              */
             },
           ),
         ),
@@ -205,11 +297,26 @@ class _CommunityState extends State<Community> {
     );
   }
 
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if(difference.inMinutes < 1) {
+      return "방금 전";
+    } else if (difference.inMinutes < 60) {
+      return "${difference.inMinutes}분 전";
+    } else if (difference.inHours < 24) {
+      return "${difference.inHours}시간 전";
+    } else {
+      return "${difference.inDays}일 전";
+    }
+  }
+
   /// _buildPostCard를 그리는 원초적인 방법에 대해서 다시 생각해보자.
   /// 이 방법은 좋다. 이 방법을 그대로 개인정보 쪽에 대입할 수 없는가?
 
   // userId 받아오긴 하지만 사용하진 않는다. 사용자가 원하면 공개하게 할 수도 있으니, 일단 받아오도록 하자.
-  Widget _buildPostCard(String title, String content, DateTime timestamp, String userId, String documentId) {
+  Widget _buildPostCard(String title, String content, DateTime timestamp, String userId, String documentId, int likesCount, int reactionsCount) {
     return GestureDetector(
       onTap: () {
         Navigator.push(context, MaterialPageRoute(builder: (context) =>
@@ -233,12 +340,9 @@ class _CommunityState extends State<Community> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis)),
-            Text(
-              content,
-              style: TextStyle(fontSize: 16, color: Colors.black54, overflow: TextOverflow.ellipsis),
-              maxLines: 2,
-            ),
+            Text(content, style: TextStyle(fontSize: 16, color: Colors.black54, overflow: TextOverflow.ellipsis), maxLines: 2),
             SizedBox(height: 5),
+            // 익명 & 시간
             Row(
               children: [
                 Text(_formatTimestamp(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
@@ -249,6 +353,18 @@ class _CommunityState extends State<Community> {
                   color: Colors.black38,
                 ),
                 Text('익명', style: TextStyle(fontSize: 14, color: Colors.black38, overflow: TextOverflow.ellipsis)),
+              ],
+            ),
+            // 좋아요 & 댓글
+            Row(
+              children: [
+                Icon(Icons.thumb_up, size: 14, color: conceptColor),
+                SizedBox(width: 5),
+                Text('$likesCount', style: TextStyle(fontSize: 14, color: Colors.black)),
+                SizedBox(width: 10),
+                Icon(Icons.comment, size: 14, color: conceptColor),
+                SizedBox(width: 5),
+                Text('$reactionsCount', style: TextStyle(fontSize: 14, color: Colors.black)),
               ],
             ),
           ],
