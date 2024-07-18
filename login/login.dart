@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../main.dart';
 import 'get_info.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../main.dart';
+import '../colors.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -21,7 +17,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -45,11 +41,11 @@ class _LoginState extends State<Login> {
                       fit: BoxFit.fitWidth,
                       child: Row(
                         children: [
-                          Image.asset('assets/images/logo.png', width: 20, height: 20),
+                          Image.asset('assets/images/new_logo.png', width: 20, height: 20),
                           SizedBox(width: 5),
                           Text(
                             '교환하냥',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: conceptColor),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.keyColor),
                           ),
                         ],
                       ),
@@ -133,7 +129,7 @@ class _LoginState extends State<Login> {
             return Colors.black.withOpacity(0.8);
           }),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return backgroundColor;
+            return AppColors.backgroundColor;
           }),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             return Colors.grey.withOpacity(0.1);
@@ -205,7 +201,7 @@ class _LoginState extends State<Login> {
             return Colors.black.withOpacity(0.8);
           }),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return backgroundColor;
+            return AppColors.backgroundColor;
           }),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             return Colors.grey.withOpacity(0.1);

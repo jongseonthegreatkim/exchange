@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // To save username, university in firestore.
 import '../main.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class GetInfo extends StatefulWidget {
   final User user; // Pass the Firebase user to this screen
@@ -33,11 +29,33 @@ class _GetInfoState extends State<GetInfo> {
     });
   }
 
+  Future<void> _saveAndSetKeyColorToFirestore(String university) async {
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('universities').doc(university).get();
+
+      if(doc.exists && doc['색상'] != null) {
+        String colorString = doc['색상'];
+
+        await FirebaseFirestore.instance.collection('users').doc(widget.user.uid).update({
+          '색상' : colorString,
+        });
+
+        Color universityKeyColor = Color(int.parse(colorString.replaceFirst('#', '0xFF')));
+
+        AppColors.keyColor = universityKeyColor;
+      } else {
+        print('document for univeristy or color of univeristy does not exists');
+      }
+    } catch (e) {
+      print('key color change failed with error: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0,
         leading: IconButton(
           onPressed: () {
@@ -52,7 +70,7 @@ class _GetInfoState extends State<GetInfo> {
         ),
       ),
       body: Container(
-        color: backgroundColor,
+        color: AppColors.backgroundColor,
         padding: EdgeInsets.all(16),
         child: Form(
           key: _formKey,
@@ -70,7 +88,7 @@ class _GetInfoState extends State<GetInfo> {
                       isDense: true,
                       border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                       enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: conceptColor)),
+                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.keyColor)),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -91,6 +109,9 @@ class _GetInfoState extends State<GetInfo> {
 
                     // Save the user information to Firestore
                     await _saveUserInfoToFirestore(username, university);
+
+                    // keycolor 기본 값에서 학교별 값으로 변경하는 곳 -> 현재 철회
+                    //await _saveAndSetKeyColorToFirestore(university);
 
                     // Navigate to the home screen with user info
                     Navigator.pushReplacement(
@@ -115,7 +136,7 @@ class _GetInfoState extends State<GetInfo> {
                     return Colors.black.withOpacity(0.8);
                   }),
                   backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    return backgroundColor;
+                    return AppColors.backgroundColor;
                   }),
                   overlayColor: WidgetStateProperty.resolveWith((states) {
                     return Colors.grey.withOpacity(0.1);
@@ -205,7 +226,7 @@ class _UniversityDropdownState extends State<UniversityDropdown> {
             isDense: true,
             border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
             enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: conceptColor)),
+            focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.keyColor)),
           ),
           onChanged: _filterUniversities, // Filter as the user types (=something changes in TextFormField)
           onTap: () {
@@ -251,8 +272,8 @@ class _UniversityDropdownState extends State<UniversityDropdown> {
         ],
         if (isLoading)...[
           Center(child: CircularProgressIndicator(
-            color: conceptColor,
-            backgroundColor: backgroundColor,
+            color: AppColors.keyColor,
+            backgroundColor: AppColors.backgroundColor,
           )),
         ]
       ],

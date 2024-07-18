@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../colors.dart';
 
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
 class Report extends StatefulWidget {
   const Report({super.key});
 
@@ -23,9 +20,9 @@ class _ReportState extends State<Report> {
     TextEditingController _contentController = TextEditingController();
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
         title: Text('신고하기'),
         titleSpacing: 0, // To make title to stay at the middle
@@ -37,9 +34,9 @@ class _ReportState extends State<Report> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: backgroundColor,
+                color: AppColors.backgroundColor,
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: conceptColor, width: 1),
+                border: Border.all(color: AppColors.keyColor, width: 1),
               ),
               child: Text(
                 '취소',
@@ -57,7 +54,7 @@ class _ReportState extends State<Report> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: conceptColor,
+                color: AppColors.keyColor.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Text(

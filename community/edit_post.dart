@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class EditPost extends StatefulWidget {
   const EditPost({super.key, required this.title, required this.content, required this.documentId, required this.onPostFixed});
@@ -29,9 +25,9 @@ class _EditPostState extends State<EditPost> {
     TextEditingController _contentController = TextEditingController(text: widget.content);
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
         title: Text('게시글 수정'),
         titleSpacing: 0, // To make title to stay at the middle
@@ -43,9 +39,9 @@ class _EditPostState extends State<EditPost> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: backgroundColor,
+                color: AppColors.backgroundColor,
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: conceptColor, width: 1),
+                border: Border.all(color: AppColors.keyColor, width: 1),
               ),
               child: Text(
                 '취소',
@@ -69,7 +65,7 @@ class _EditPostState extends State<EditPost> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: conceptColor,
+                color: AppColors.keyColor,
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Text(

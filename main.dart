@@ -13,13 +13,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'login/login.dart';
 import 'login/get_info.dart';
 import 'info/info.dart';
+import 'info/my_chats.dart';
 import 'community/community.dart';
 import 'profile/profile.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import 'colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,11 +24,14 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  await initializeRemoteConfig();
+  await initializeRemoteConfig(); // 버전 자동 업데이트를 위한 Firebase - Remote Configuration
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler); // 푸시 알림을 위한 Firebase - Cloud Message
 
   initializeTimeZones();
+
+  AppColors.keyColor = Color(0xFFFFF4F3); // 최초 색상은 이것으로 설정.
+  AppColors.keyColor = Color(0xFFEC8680); // 최초 색상은 이것으로 설정.
 
   runApp(ExchangeStudentApp());
 }
@@ -78,33 +78,68 @@ class ExchangeStudentApp extends StatelessWidget {
     return {'username': null, 'university': null};
   }
 
+  Future<void> _keyColorInitialization(String uid) async {
+
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if(doc['색상'] != null) {
+      String colorString = doc['색상'];
+
+      Color universityKeyColor = Color(int.parse(colorString.replaceFirst('#', '0xFF')));
+
+      AppColors.keyColor = universityKeyColor;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'Pretendard', // Set a base font to 'Pretendard'
+      ),
       home: FutureBuilder(
         future: FirebaseAuth.instance.authStateChanges().first, // Get the current user state
         builder: (context, AsyncSnapshot<User?> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Scaffold(body: Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor)));
+            return Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.keyColor,
+                  backgroundColor: AppColors.backgroundColor,
+                ),
+              ),
+            );
           } else if (snapshot.hasData) {
             final User user = snapshot.data!;
             return FutureBuilder<Map<String, String?>>(
               future: _getUserInfoFromFirestore(user.uid),
               builder: (context, firestoreSnapshot) {
                 if (firestoreSnapshot.connectionState == ConnectionState.waiting) {
-                  return Scaffold(body: Center(child: CircularProgressIndicator(
-                    color: conceptColor,
-                    backgroundColor: backgroundColor,
-                  )));
+                  return Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.keyColor,
+                        backgroundColor: AppColors.backgroundColor,
+                      ),
+                    ),
+                  );
                 } else {
                   final userInfo = firestoreSnapshot.data;
                   if (userInfo?['username'] == null || userInfo?['university'] == null) {
                     // User is logged in but needs to enter additional information
                     return GetInfo(user: user);
                   } else {
+
+                    // 최초 로그인이 아니라고 결정 났는데 -> 색상은 main.dart에서 초기화 되기 때문에 -> 현재 철회
+                    // _keyColorInitialization(user.uid.toString());
+
                     // User is logged in and has their data stored in Firestore
-                    return Home(username: userInfo!['username']!, university: userInfo['university']!, bottomIndex: 0);
+                    return Home(
+                      username: userInfo!['username']!,
+                      university: userInfo['university']!,
+                      bottomIndex: 0,
+                    );
                   }
                 }
               },
@@ -160,6 +195,8 @@ class _HomeState extends State<Home> {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String currentVersion = packageInfo.version;
 
+    print('rv: $requiredVersion, cv: $currentVersion');
+
     if(isVersionLowerThan(currentVersion, requiredVersion)) {
       showUpdateDialog();
     }
@@ -193,7 +230,7 @@ class _HomeState extends State<Home> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('업데이트 해줘!'),
           content: Text(
             '새 버전 나왔는디.. 업데이트 한 번만 해 주슈\n'
@@ -219,7 +256,7 @@ class _HomeState extends State<Home> {
                 '업데이트 하기',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: conceptColor,
+                  color: AppColors.keyColor,
                 ),
               ),
             ),
@@ -288,20 +325,49 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
 
-    Text _appBarTitle = Text('교환하냥');
+    Text _appBarTitle = Text(
+      '대학교환',
+      style: TextStyle(
+        fontWeight: FontWeight.w700,
+      ),
+    );
     late var _appBarLeading;
     List<Widget> _appBarActions = [];
 
     if(_currentIndex == 0) {
       _appBarLeading = Padding(
         padding: EdgeInsets.only(left: 15),
-        child: Image.asset('assets/images/logo.png', width: 30, height: 30),
+        child: Image.asset('assets/images/new_logo.png', width: 30, height: 30),
       );
+      _appBarActions = [
+        IconButton(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => MyChats(
+              userId: FirebaseAuth.instance.currentUser!.uid,
+            )));
+          },
+          icon: Icon(Icons.chat, size: 30, color: Colors.black),
+        ),
+        IconButton(
+          onPressed: () {
+            setState(() {
+              _currentIndex = 2;
+            });
+          },
+          icon: Icon(Icons.person, size: 30, color: Colors.black),
+        ),
+        SizedBox(width: 15),
+      ];
     }
     if(_currentIndex == 1) {
-      _appBarTitle = Text('커뮤니티');
-      _appBarLeading = _isSearching ? null : Icon(Icons.list_alt, size: 30, color: Colors.black);
-      _appBarActions = _isSearching ? [
+      _appBarTitle = Text(
+        '커뮤니티',
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+        ),
+      );
+      _appBarLeading = (_isSearching == true) ? null : Icon(Icons.list_alt, size: 30, color: Colors.black);
+      _appBarActions = (_isSearching == true) ? [
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(15),
@@ -350,14 +416,19 @@ class _HomeState extends State<Home> {
       ];
     }
     if(_currentIndex == 2) {
-      _appBarTitle = Text('프로필');
+      _appBarTitle = Text(
+        '프로필',
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+        ),
+      );
       _appBarLeading = Icon(Icons.person, size: 30, color: Colors.black);
     };
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
         leading: _appBarLeading,
         title: _appBarTitle,
@@ -366,23 +437,30 @@ class _HomeState extends State<Home> {
         actions: _appBarActions
       ),
       body: _body(context, _currentIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: backgroundColor,
-        items: [
-          BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.school, size: 30)), label: '메인'),
-          BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.list_alt, size: 30)), label: '커뮤니티'),
-          BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.person, size: 30)), label: '개인정보'),
-        ],
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-            // 다른데로 넘어갈 땐 항상 _isSearching 끄기
-            _isSearching = false;
-          });
-        },
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.grey,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Colors.grey, width: 0.5),
+          ),
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: AppColors.backgroundColor,
+          items: [
+            BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.school, size: 30)), label: '메인'),
+            BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.list_alt, size: 30)), label: '커뮤니티'),
+            BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.person, size: 30)), label: '개인정보'),
+          ],
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+              // 다른데로 넘어갈 땐 항상 _isSearching 끄기
+              _isSearching = false;
+            });
+          },
+          selectedItemColor: Colors.black,
+          unselectedItemColor: Colors.grey,
+        ),
       ),
     );
   }

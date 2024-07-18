@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class Developer extends StatefulWidget {
   const Developer({super.key});
@@ -17,9 +13,9 @@ class _DeveloperState extends State<Developer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
         title: Text('개발진 정보'),
         titleSpacing: 0, // To make title to stay at the middle
@@ -47,11 +43,11 @@ class _DeveloperState extends State<Developer> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey, width: 0.5),
-        color: intermediateBackgroundColor,
+        color: AppColors.backgroundColor,
       ),
       child: Row(
         children: [
-          Icon(Icons.person, size: 100, color: conceptColor),
+          Icon(Icons.person, size: 100, color: AppColors.keyColor),
           SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +118,7 @@ class _DeveloperState extends State<Developer> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('개발진 대표 전화번호'),
           content: Text('010-2658-4379'),
           actions: [
@@ -132,7 +128,7 @@ class _DeveloperState extends State<Developer> {
               },
               child: Text(
                 '확인',
-                style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -149,7 +145,7 @@ class _DeveloperState extends State<Developer> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('개발진 대표 메일'),
           content: Text('crushgagarin1961@naver.com'),
           actions: [
@@ -159,7 +155,7 @@ class _DeveloperState extends State<Developer> {
               },
               child: Text(
                 '확인',
-                style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
               ),
             ),
           ],

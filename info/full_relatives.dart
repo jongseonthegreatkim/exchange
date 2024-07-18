@@ -1,11 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class FullRelatives extends StatefulWidget {
   const FullRelatives({super.key, required this.relatives, required this.areas});
@@ -22,6 +18,20 @@ class _FullRelativesState extends State<FullRelatives> {
   TextEditingController _searchController = TextEditingController();
   String _searchTerm = '';
 
+
+  void univAdder() async {
+    await FirebaseFirestore.instance.collection('universities').doc('고려대학교').update({
+      //'상대교' : sangDaeGyo,
+      //'일정' : iljeong,
+      //'기준' : gijun,
+    });
+  }
+  @override
+  void initState() {
+    super.initState();
+    univAdder();
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -29,9 +39,9 @@ class _FullRelativesState extends State<FullRelatives> {
     List<String> areas = widget.areas;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: _isSearching ? false : true,
         title: _isSearching
@@ -41,8 +51,8 @@ class _FullRelativesState extends State<FullRelatives> {
           onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
           decoration: InputDecoration(
             hintText: '대학 이름을 입력하세요',
-            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: conceptColor)),
-            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: conceptColor)),
+            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.keyColor)),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.keyColor)),
           ),
           cursorColor: Colors.black,
           onChanged: (value) {
@@ -144,7 +154,7 @@ class _FullRelativesState extends State<FullRelatives> {
           decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               border: Border.all(color: Colors.grey.withOpacity(0.5), width: 0.35),
-              color: intermediateBackgroundColor
+              color: AppColors.backgroundColor,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

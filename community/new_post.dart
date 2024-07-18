@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For user authentication
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
-
+import '../colors.dart';
 
 class PostSubmissionScreen extends StatefulWidget {
   const PostSubmissionScreen({super.key, required this.onPostCreated});
@@ -49,9 +44,9 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0,
         title: Text('새 글 쓰기'),
         centerTitle: true,
@@ -62,7 +57,7 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: conceptColor,
+                color: AppColors.keyColor,
                 borderRadius: BorderRadius.circular(100),
               ),
               child: Text(
@@ -87,7 +82,11 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
                 autofocus: true,
                 onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
                 decoration: InputDecoration(
-                  hintText: '제목',
+                  hintText: '제목을 입력해주세요',
+                  hintStyle: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 15,
+                  ),
                   focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                 ),
@@ -104,7 +103,14 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
                 controller: _contentController,
                 onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
                 decoration: InputDecoration(
-                  hintText: '내용을 입력해주세요',
+                  hintText: '내용을 입력해주세요\n\n'
+                            '대학교환은 모두가 건전하게 활동하는 커뮤니티를 지향합니다. '
+                            '부적절하거나 불쾌감을 줄 수 있는 컨텐츠는 유저의 신고 없이도 제재를 받을 수 있습니다. '
+                            '커뮤니티의 성격과 맞지 않는 정치/시사/혐오/차별 주제의 게시물을 삼가 주시기 바랍니다.',
+                  hintStyle: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 15,
+                  ),
                   border: InputBorder.none,
                   isDense: true,
                 ),
@@ -119,19 +125,6 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
                   }
                   return null;
                 },
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '교환하냥은 모두가 건전하게 활동하는 커뮤니티를 지향합니다. '
-                      '부적절하거나 불쾌감을 줄 수 있는 컨텐츠는 유저의 신고 없이도 제재를 받을 수 있습니다. '
-                      '커뮤니티의 성격과 맞지 않는 정치/시사/혐오/차별 주제의 게시물을 삼가 주시기 바랍니다. ',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

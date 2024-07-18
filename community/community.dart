@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'new_post.dart';
 import 'post.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class Community extends StatefulWidget {
   // 강제가 아닌 경우에는 required 안 넣는 구나.
@@ -205,13 +201,13 @@ class _CommunityState extends State<Community> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       body: _isFetching && _posts.isEmpty
-      ? Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor))
+      ? Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor))
       : RefreshIndicator(
         onRefresh: _refreshPosts,
-        color: conceptColor, // 리프레시 하면 상단에 뜨는 CircularProgressIndicator의 색상.
-        backgroundColor: backgroundColor,
+        color: AppColors.keyColor, // 리프레시 하면 상단에 뜨는 CircularProgressIndicator의 색상.
+        backgroundColor: AppColors.backgroundColor,
         child: NotificationListener<ScrollNotification>(
           onNotification: (scrollNotification) {
             final maxScroll = scrollNotification.metrics.maxScrollExtent;
@@ -286,7 +282,7 @@ class _CommunityState extends State<Community> {
             return Colors.black.withOpacity(0.8);
           }),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return conceptColor;
+            return AppColors.keyColor;
           }),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             return Colors.grey.withOpacity(0.1);
@@ -339,8 +335,24 @@ class _CommunityState extends State<Community> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis)),
-            Text(content, style: TextStyle(fontSize: 16, color: Colors.black54, overflow: TextOverflow.ellipsis), maxLines: 2),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              content,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+                overflow: TextOverflow.ellipsis
+              ),
+              maxLines: 2,
+            ),
             SizedBox(height: 5),
             // 익명 & 시간
             Row(
@@ -355,16 +367,17 @@ class _CommunityState extends State<Community> {
                 Text('익명', style: TextStyle(fontSize: 14, color: Colors.black38, overflow: TextOverflow.ellipsis)),
               ],
             ),
+            SizedBox(height: 5),
             // 좋아요 & 댓글
             Row(
               children: [
-                Icon(Icons.thumb_up, size: 14, color: conceptColor),
+                Icon(Icons.thumb_up, size: 14, color: Color(0xFFF92015)),
                 SizedBox(width: 5),
-                Text('$likesCount', style: TextStyle(fontSize: 14, color: Colors.black)),
+                Text('$likesCount', style: TextStyle(fontSize: 14, color: Color(0xFFF92015))),
                 SizedBox(width: 10),
-                Icon(Icons.comment, size: 14, color: conceptColor),
+                Icon(Icons.comment, size: 14, color: Color(0xFF07BCBC)),
                 SizedBox(width: 5),
-                Text('$reactionsCount', style: TextStyle(fontSize: 14, color: Colors.black)),
+                Text('$reactionsCount', style: TextStyle(fontSize: 14, color: Color(0xFF07BCBC))),
               ],
             ),
           ],

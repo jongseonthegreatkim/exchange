@@ -3,11 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../community/post.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class UserContent extends StatefulWidget {
   const UserContent({super.key, required this.isPost, required this.username, required this.university});
@@ -114,16 +110,16 @@ class _UserContentState extends State<UserContent> {
     List<DocumentSnapshot> _userContent = widget.isPost ? _userPosts : _userReactions;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: AppColors.backgroundColor,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
         title: Text(widget.isPost ? '내가 쓴 글' : '내가 댓글 쓴 글'),
       ),
       body: _isLoading
       ? Center(child: CircularProgressIndicator(
-        color: conceptColor,
-        backgroundColor: backgroundColor,
+        color: AppColors.keyColor,
+        backgroundColor: AppColors.backgroundColor,
       ))
       : Column(
         children: [

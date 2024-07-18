@@ -3,12 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For user authentication
 import 'package:intl/intl.dart';
 import '../main.dart';
+import 'chat.dart';
 import 'edit_post.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class Post extends StatefulWidget {
   const Post({super.key,
@@ -175,14 +172,14 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('두 번은 너무 과해 :)'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('넴..', style: TextStyle(color: conceptColor)),
+              child: Text('넴..', style: TextStyle(color: AppColors.keyColor)),
             ),
           ],
           shape: RoundedRectangleBorder(
@@ -196,7 +193,7 @@ class _PostState extends State<Post> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       appBar: _appBar(),
       body: SafeArea(
         child: Column(
@@ -210,7 +207,7 @@ class _PostState extends State<Post> {
                   children: [
                     _postSection(), // Post
                     _isFetching
-                    ? Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor))
+                    ? Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor))
                     : _commentsSection(), // Comments
                     //: Container(width: 10, height: 10, color: Colors.pink,),
                   ],
@@ -231,7 +228,7 @@ class _PostState extends State<Post> {
     User? currentUser = FirebaseAuth.instance.currentUser;
 
     return AppBar(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.backgroundColor,
       scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
       title: Text('커뮤니티'),
       titleSpacing: 0,
@@ -282,6 +279,18 @@ class _PostState extends State<Post> {
             },
             icon: Icon(Icons.block, color: Colors.black),
           ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => Chat(
+                isAuthor: false,
+                postAuthorId: widget.userId,
+                postId: widget.documentId,
+                postTitle: widget.title,
+                starterId: currentUser.uid,
+              )));
+            },
+            icon: Icon(Icons.chat, color: Colors.black),
+          ),
           SizedBox(width: 15),
         ]
       ],
@@ -293,7 +302,7 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-            backgroundColor: backgroundColor,
+            backgroundColor: AppColors.backgroundColor,
             title: Text("게시글 삭제"),
             content: Text("게시글을 삭제하시겠습니까?"),
             actions: [
@@ -303,7 +312,7 @@ class _PostState extends State<Post> {
                 },
                 child: Text(
                   '취소',
-                  style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
                 ),
               ),
               TextButton(
@@ -351,7 +360,7 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('게시글 신고하기'),
           content: Text(
             '게시글을 신고하시겠습니까? '
@@ -411,7 +420,7 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('사용자 차단하기'),
           content: Text(
             '사용자를 차단하시겠습니까? '
@@ -508,7 +517,7 @@ class _PostState extends State<Post> {
                 onTap: _incrementLikes,
                 child: Row(
                   children: [
-                    Icon(Icons.thumb_up, size: 15, color: conceptColor),
+                    Icon(Icons.thumb_up, size: 15, color: Color(0xFFF92015)),
                     SizedBox(width: 5),
                     FutureBuilder<int>(
                       future: _likesFuture,
@@ -518,7 +527,7 @@ class _PostState extends State<Post> {
                         } else if(snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else {
-                          return Text('${snapshot.data}', style: TextStyle(fontSize: 15, color: Colors.black));
+                          return Text('${snapshot.data}', style: TextStyle(fontSize: 15, color: Color(0xFFF92015)));
                         }
                       },
                     ),
@@ -538,9 +547,9 @@ class _PostState extends State<Post> {
                     int reactionsCount = snapshot.data?.length ?? 0;
                     return Row(
                       children: [
-                        Icon(Icons.comment, size: 15, color: conceptColor),
+                        Icon(Icons.comment, size: 15, color: Color(0xFF07BCBC)),
                         SizedBox(width: 5),
-                        Text('$reactionsCount', style: TextStyle(fontSize: 15, color: Colors.black)),
+                        Text('$reactionsCount', style: TextStyle(fontSize: 15, color: Color(0xFF07BCBC))),
                       ],
                     );
                   }
@@ -560,7 +569,7 @@ class _PostState extends State<Post> {
       future: _reactionsFuture,
       builder: (context, snapshot) {
         if(snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor));
+          return Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor));
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else if (snapshot.hasData){
@@ -624,7 +633,7 @@ class _PostState extends State<Post> {
                     _replyToCommentId = commentId; // Set the current commentID to reply to
                   });
                 },
-                icon: Icon(Icons.reply_outlined, color: conceptColor),
+                icon: Icon(Icons.reply_outlined, color: AppColors.keyColor),
               ),
             ],
           ),
@@ -639,7 +648,7 @@ class _PostState extends State<Post> {
       future: _reactionsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor));
+          return Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor));
         } else if (snapshot.hasError) {
           return Text('Error loading replies: ${snapshot.error}');
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -698,7 +707,7 @@ class _PostState extends State<Post> {
     TextEditingController _inputController = TextEditingController();
 
     IconButton _suffixIconButton = IconButton(
-      icon: Icon(Icons.send, color: conceptColor),
+      icon: Icon(Icons.send, color: AppColors.keyColor),
       onPressed: () async {
         String content = _inputController.text.trim();
 
@@ -777,7 +786,7 @@ class _PostState extends State<Post> {
                 hintText: _replyToCommentId == null ? '댓글을 입력하세요' : '대댓글을 입력하세요',
                 border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                 enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: conceptColor)),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.keyColor)),
                 contentPadding: EdgeInsets.only(left: 15),
                 suffixIcon: _suffixIconButton,
               ),

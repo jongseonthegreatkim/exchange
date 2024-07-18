@@ -3,11 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For DateTime
 import 'dart:async'; // For Timer
 import 'full_relatives.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class Info extends StatefulWidget {
   const Info({super.key, required this.university});
@@ -60,11 +56,16 @@ class _InfoState extends State<Info> {
   @override
   Widget build(BuildContext context) {
     if(universityData == null) {
-      return Center(child: CircularProgressIndicator(color: conceptColor, backgroundColor: backgroundColor));
+      return Center(
+        child: CircularProgressIndicator(
+          color: AppColors.keyColor,
+          backgroundColor: AppColors.backgroundColor,
+        ),
+      );
     } else {
       return SingleChildScrollView(
         child: Container(
-          color: backgroundColor,
+          color: AppColors.backgroundColor,
           margin: EdgeInsets.all(15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,62 +111,68 @@ class _InfoState extends State<Info> {
     minutes = mm!=0 ? '$mm분 ' : '';
     seconds = ss!=0 ? '$ss초' : '';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FittedBox(
-          child: Text(
-            '${widget.university} $latestKey까지',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 20,
+    if(dateEntries.length != 0) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '모집일정 안내',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
+          ),
+          SizedBox(height: 10),
+          FittedBox(
+            child: Text(
+              '${widget.university} $latestKey까지',
+              style: TextStyle(color: Colors.black, fontSize: 20),
             ),
           ),
-        ),
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: '$days$hours$minutes$seconds',
-                style: TextStyle(color: Colors.redAccent, fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              TextSpan(
-                text: " 남았어요!",
-                style: TextStyle(color: Colors.black, fontSize: 20),
-              ),
-            ],
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$days$hours$minutes$seconds',
+                  style: TextStyle(color: Colors.redAccent, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                TextSpan(
+                  text: " 남았어요!",
+                  style: TextStyle(color: Colors.black, fontSize: 20),
+                ),
+              ],
+            ),
           ),
-        ),
-        SizedBox(height: 10),
-        SizedBox(
-          height: 115,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            shrinkWrap: true,
-            children: [
-              ...dateEntries.map((entry) {
-                bool _isFirst = false;
-                if(entry.key == latestKey)
-                  _isFirst = true;
-                return _buildScheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), '캘린더에 추가', _isFirst);
-              }),
-            ],
+          SizedBox(height: 15),
+          SizedBox(
+            height: 126,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              shrinkWrap: true,
+              children: [
+                ...dateEntries.map((entry) {
+                  bool _isFirst = false;
+                  if(entry.key == latestKey)
+                    _isFirst = true;
+                  return _buildScheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), '캘린더에 추가', _isFirst);
+                }),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    } else {
+      return Container(); // dateEntries가 없는 경우 -> 그냥 ScheduleSection을 없앤다.
+    }
   }
   Widget _buildScheduleCard(String title, String date, String calendar, bool _isFirst) {
 
     final Color _backgroundColor;
-    _isFirst == true ? _backgroundColor = conceptColor.withOpacity(0.3) : _backgroundColor = backgroundColor;
+    _isFirst == true ? _backgroundColor = AppColors.keyColor.withOpacity(0.3) : _backgroundColor = AppColors.backgroundColor;
 
     return Container(
       margin: EdgeInsets.only(right: 10),
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 0.35),
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
         color: _backgroundColor,
       ),
       child: Column(
@@ -173,14 +180,14 @@ class _InfoState extends State<Info> {
         children: [
           Text(
             title,
-            style: TextStyle(color: Colors.black, fontSize: 17),
+            style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w700),
           ),
           SizedBox(height: 10),
           Text(
             date,
-            style: TextStyle(color: Colors.black, fontSize: 17),
+            style: TextStyle(color: Colors.black, fontSize: 16),
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 25),
           GestureDetector(
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
@@ -195,64 +202,68 @@ class _InfoState extends State<Info> {
   Widget _buildRelativesSection(Map<String, dynamic>? relatives) {
     List<String> areas = (relatives != null) ? relatives.keys.toList() : [];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '지원 가능 대학들을 확인해보세요!',
+    if(relatives != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '지원가능 대학 목록',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
+              ),
+              GestureDetector(
+                onTap: () {
+                  // 지원 가능 대학 목록 전체 보기
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
+                    relatives: relatives,
+                    areas: areas,
+                  )));
+                },
+                child: Row(
+                  children: [
+                    Text("전체 보기", style: TextStyle(fontSize: 15, color: Colors.black)),
+                    Icon(Icons.keyboard_arrow_right_sharp, size: 20, color: Colors.black),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10),
+          FittedBox(
+            child: Text(
+              '권역 별로 지원이 가능한 대학교 목록을 확인해보세요!',
               style: TextStyle(color: Colors.black, fontSize: 20),
             ),
-            GestureDetector(
-              onTap: () {
-                // 지원 가능 대학 목록 전체 보기
-                Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
-                  relatives: (relatives != null) ? relatives : {},
-                  areas: areas,
-                )));
-              },
-              child: Row(
-                children: [
-                  Text("전체 보기", style: TextStyle(fontSize: 15, color: Colors.black)),
-                  Icon(Icons.keyboard_arrow_right_sharp, size: 20, color: Colors.black),
-                ],
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 10),
-        SizedBox(
-          height: 221,
-          child: (relatives != null)
-          ? ListView(
-            scrollDirection: Axis.horizontal,
-            shrinkWrap: true,
-            children: [
-              ...areas.map((area) {
-                List universitiesInArea = relatives[area].keys.toList();
+          ),
+          SizedBox(height: 10),
+          SizedBox(
+            height: 222,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              shrinkWrap: true,
+              children: [
+                ...areas.map((area) {
+                  List universitiesInArea = relatives[area].keys.toList();
 
-                // previewSplit개 만큼만 universitiesInArea에서 떼 올 예정
-                int previewSplit = (universitiesInArea.length >= 5) ? 5 : universitiesInArea.length;
+                  // previewSplit개 만큼만 universitiesInArea에서 떼 올 예정
+                  int previewSplit = (universitiesInArea.length >= 5) ? 5 : universitiesInArea.length;
 
-                // 떼 온 값을 previewUnivList에 넣는다
-                List previewUnivList = universitiesInArea.sublist(0, previewSplit);
+                  // 떼 온 값을 previewUnivList에 넣는다
+                  List previewUnivList = universitiesInArea.sublist(0, previewSplit);
 
-                return _buildRelativesCard(area, previewUnivList, relatives);
-              }),
-            ],
-          )
-          : Container(
-            color: intermediateBackgroundColor,
-            child: Center(
-              child: Text('아직 ${widget.university}의 지원 가능 대학 섹션은 지원되고 있지 않습니다.'),
+                  return _buildRelativesCard(area, previewUnivList, relatives);
+                }),
+              ],
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    } else {
+      return Container(); // relatives가 없는 경우 -> 그냥 RelativesSection을 없앤다.
+    }
   }
   Widget _buildRelativesCard(String title, List<dynamic> universities, Map<String, dynamic> relatives) {
     // relatives와 areas : 자세히 보기를 위해서 사용
@@ -264,16 +275,26 @@ class _InfoState extends State<Info> {
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 0.35),
-        color: intermediateBackgroundColor
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
+        color: Colors.white,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            title,
-            style: TextStyle(color: Colors.black, fontSize: 17),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: title,
+                  style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextSpan(
+                  text: ' 대학',
+                  style: TextStyle(color: Colors.black, fontSize: 18),
+                ),
+              ],
+            ),
           ),
           SizedBox(height: 8),
           ...universities.map((university) =>
@@ -296,7 +317,7 @@ class _InfoState extends State<Info> {
                 areas: areas,
               )));
             },
-            child: Text("자세히 보기", style: TextStyle(fontSize: 15)),
+            child: Text("전체 보기", style: TextStyle(fontSize: 15)),
           ),
         ],
       ),
@@ -318,43 +339,48 @@ class _InfoState extends State<Info> {
       return indexA.compareTo(indexB);
     });
 
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "지원 조건과 선발 기준을 알아봐요!",
-          style: TextStyle(color: Colors.black, fontSize: 20),
-        ),
-        SizedBox(height: 10),
-        (criteria != null)
-        ? ListView(
-          scrollDirection: Axis.vertical,
-          physics: NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          children: [
-            ...standards.map((standard) {
-              List standardContents = criteria[standard].values.toList(); // 조건 목록들
-
-              // resort criteria['standard'] based on order of criteria['standard'].key
-              List<MapEntry<String, dynamic>> sortedEntries = criteria[standard].entries.toList()..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
-              // Re-put sorted value into standardContents
-              standardContents = sortedEntries.map((entry) => entry.value).toList();
-
-              String etc = '내 성적 입력하기';
-              (standard == '선발 기준') ? (etc = '빈칸') : ((standard == '지원 조건') ? (etc = '자세히 보기') : null);
-              return _buildCriteriaCard('${widget.university} ', standard, standardContents, etc);
-            }),
-          ],
-        )
-        : Container(
-          color: intermediateBackgroundColor,
-          child: Center(
-            child: Text('아직 ${widget.university}의 지원 조건/선발 기준 섹션은 지원되고 있지 않습니다.'),
+    if(criteria != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '지원조건 및 선발기준',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
           ),
-        ),
-      ],
-    );
+          SizedBox(height: 10),
+          FittedBox(
+            child: Text(
+              "지원조건과 선발기준, 제출하는 어학성적을 체크해요!",
+              style: TextStyle(color: Colors.black, fontSize: 20),
+            ),
+          ),
+          SizedBox(height: 10),
+          ListView(
+            scrollDirection: Axis.vertical,
+            physics: NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            children: [
+              ...standards.map((standard) {
+                List standardContents = criteria[standard].values.toList(); // 조건 목록들
+
+                // resort criteria['standard'] based on order of criteria['standard'].key
+                List<MapEntry<String, dynamic>> sortedEntries = criteria[standard].entries.toList()..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
+                // Re-put sorted value into standardContents
+                standardContents = sortedEntries.map((entry) => entry.value).toList();
+
+                String etc = '내 성적 입력하기';
+                (standard == '선발 기준') ? (etc = '빈칸') : ((standard == '지원 조건') ? (etc = '자세히 보기') : null);
+                return _buildCriteriaCard('${widget.university} ', standard, standardContents, etc);
+              }),
+            ],
+          ),
+        ],
+      );
+    } else {
+      return Container(); // criteria가 없는 경우 -> 그냥 CriteriaSection을 없앤다.
+    }
+
+
   }
   Widget _buildCriteriaCard(String university, String standard, List<dynamic> standdardContents, String etc) {
     return Container(
@@ -362,8 +388,8 @@ class _InfoState extends State<Info> {
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 0.35),
-        color: intermediateBackgroundColor,
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
+        color: AppColors.backgroundColor,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,11 +397,11 @@ class _InfoState extends State<Info> {
           RichText(
             text: TextSpan(
               text: university,
-              style: TextStyle(color: Colors.black, fontSize: 17),
+              style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
               children: [
                 TextSpan(
                   text: standard,
-                  style: TextStyle(color: Colors.black, fontSize: 17),
+                  style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),

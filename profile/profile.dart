@@ -6,11 +6,7 @@ import 'user_content.dart';
 import 'suggestion.dart';
 import 'report.dart';
 import 'developer.dart';
-
-Color backgroundColor = Color(0xFFF8F7F4);
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
-Color intermediateBackgroundColor = Color(0xFFfbfff8);
+import '../colors.dart';
 
 class Profile extends StatefulWidget {
   final String username;
@@ -101,11 +97,11 @@ class _ProfileState extends State<Profile> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey, width: 0.5),
-        color: intermediateBackgroundColor,
+        color: AppColors.backgroundColor,
       ),
       child: Row(
         children: [
-          Icon(Icons.person, size: 100, color: conceptColor),
+          Icon(Icons.person, size: 100, color: AppColors.keyColor),
           SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +121,7 @@ class _ProfileState extends State<Profile> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey, width: 0.5),
-        color: intermediateBackgroundColor,
+        color: AppColors.backgroundColor,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -153,7 +149,7 @@ class _ProfileState extends State<Profile> {
         SizedBox(height: 10),
         _buildSettingCard("Contact Us", ['문의하기', '신고하기', '개발진']),
         SizedBox(height: 10),
-        _buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
+        //_buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
       ],
     );
   }
@@ -206,7 +202,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('로그아웃'),
           content: Text('정말 로그아웃 할 거에요..?'),
           actions: [
@@ -216,7 +212,7 @@ class _ProfileState extends State<Profile> {
               },
               child: Text(
                 '취소',
-                style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
               ),
             ),
             TextButton(
@@ -247,7 +243,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: backgroundColor,
+          backgroundColor: AppColors.backgroundColor,
           title: Text('계정 삭제'),
           content: Text(
             '계정을 삭제 하시면, 작성하신 게시글 및 댓글에 더 이상 접근 및 수정이 불가능합니다. '
@@ -261,7 +257,7 @@ class _ProfileState extends State<Profile> {
               },
               child: Text(
                 '취소',
-                style: TextStyle(color: conceptColor, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
               ),
             ),
             TextButton(
