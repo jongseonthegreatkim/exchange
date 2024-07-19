@@ -97,6 +97,14 @@ class _MyChatsState extends State<MyChats> {
         }
       }
 
+      // Sort chats by timestamp in descending order
+      chats.sort((a, b) {
+        Timestamp aTimestamp = a['timestamp'];
+        Timestamp bTimestamp = b['timestamp'];
+
+        return bTimestamp.compareTo(aTimestamp); // Recent one on top
+      });
+
       setState(() {
         chatList = chats;
       });
@@ -120,7 +128,19 @@ class _MyChatsState extends State<MyChats> {
           future: _fetchChatFuture,
           builder: (context, snapshot) {
             if(snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor),
+                    SizedBox(height: 30),
+                    Text(
+                      '여기가 로딩이 좀 느려요.. 조금만 기다려 주세요',
+                      style: TextStyle(color: Colors.grey, fontSize: 17),
+                    ),
+                  ],
+                ),
+              );
             } else if(snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
             } else {
@@ -152,15 +172,21 @@ class _MyChatsState extends State<MyChats> {
     }
   }
 
-  Widget _chatPreview(var chat) {
-    var lastMessage = chat['lastMessage'];
-    var timestamp = (chat['timestamp'] as Timestamp).toDate();
-    var formattedTime = _formatTimestamp(timestamp);
+  Future<void> _refreshChatList() async {
+    setState(() {
+      _fetchChatFuture = _fetchChatList(); // Refresh the chat list
+    });
+  }
+
+  Widget _chatPreview(Map<String, dynamic> chat) {
+    String lastMessage = chat['lastMessage'];
+    DateTime timestamp = (chat['timestamp'] as Timestamp).toDate();
+    String formattedTime = _formatTimestamp(timestamp);
     String title = chat['postTitle'];
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => Chat(
@@ -172,6 +198,7 @@ class _MyChatsState extends State<MyChats> {
             ),
           ),
         );
+        _refreshChatList(); // Refresh the chat list when returning from chat.dart
       },
       child: Container(
         width: double.infinity,

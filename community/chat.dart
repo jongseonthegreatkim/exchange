@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 import '../colors.dart';
 
@@ -50,6 +51,17 @@ class _ChatState extends State<Chat> {
     }
   }
 
+  String _dateFormatter(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if(difference.inDays < 1) {
+      return DateFormat('hh:mm').format(dateTime);
+    } else {
+      return DateFormat('MM/dd hh:mm').format(dateTime);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,17 +93,17 @@ class _ChatState extends State<Chat> {
                       var chat = chatList[index];
                       String content = chat['content'];
                       bool isAuthor = chat['isAuthor'];
-                      String formattedTime = _formatTimestamp(chat['timestamp'].toDate());
+                      String timestamp = _dateFormatter(chat['timestamp'].toDate());
 
                       return ChatBubble(
                         chat: content,
                         isAuthor: isAuthor,
                         postAuthorId: widget.postAuthorId,
-                        timestamp: formattedTime,
+                        timestamp: timestamp,
                       );
                     },
                     separatorBuilder: (context, index) {
-                      return SizedBox(height: 10);
+                      return SizedBox(height: 3);
                     },
                   ),
                 ),
@@ -102,21 +114,6 @@ class _ChatState extends State<Chat> {
         )
       ),
     );
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if(difference.inMinutes < 1) {
-      return "방금";
-    } else if (difference.inMinutes < 60) {
-      return "${difference.inMinutes}분 전";
-    } else if (difference.inHours < 24) {
-      return "${difference.inHours}시간 전";
-    } else {
-      return "${difference.inDays}일 전";
-    }
   }
 
   Widget _chatInputField() {
@@ -218,55 +215,66 @@ class ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     String? uid = FirebaseAuth.instance.currentUser?.uid; // 보는 사람의 uid
 
-    late Alignment _alignment;
+    late MainAxisAlignment _mainAxisAlignment;
+    double leftMargin = 15;
+    double rightMargin = 15;
 
     if(postAuthorId == uid) {
       if(isAuthor == true) {
-        _alignment = Alignment.centerRight;
+        _mainAxisAlignment = MainAxisAlignment.end;
+        leftMargin = 10;
       }
       if(isAuthor == false) {
-        _alignment = Alignment.centerLeft;
+        _mainAxisAlignment = MainAxisAlignment.start;
+        rightMargin = 10;
       }
     }
     if(postAuthorId != uid) {
       if(isAuthor == true) {
-        _alignment = Alignment.centerLeft;
+        _mainAxisAlignment = MainAxisAlignment.start;
+        rightMargin = 10;
       }
       if(isAuthor == false) {
-        _alignment = Alignment.centerRight;
+        _mainAxisAlignment = MainAxisAlignment.end;
+        leftMargin = 10;
       }
     }
 
-    return Align(
-      alignment: _alignment,
-      child: Container(
-        padding: EdgeInsets.all(10),
-        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isAuthor ? AppColors.keyColor.withOpacity(0.2) : AppColors.keyColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              chat,
-              style: TextStyle(
-                color: isAuthor ? Colors.black : Colors.white,
-                fontSize: 16,
-              ),
+    return Row(
+      mainAxisAlignment: _mainAxisAlignment,
+      children: [
+        (_mainAxisAlignment != MainAxisAlignment.start)
+        ? Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text(
+            timestamp,
+            style: TextStyle(color: Colors.black, fontSize: 12),
+          ),
+        ) : SizedBox(),
+        Container(
+          margin: EdgeInsets.fromLTRB(leftMargin, 5, rightMargin, 5),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: isAuthor ? AppColors.keyColor.withOpacity(0.2) : AppColors.keyColor,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            chat,
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 16,
             ),
-            SizedBox(height: 5),
-            Text(
-              timestamp,
-              style: TextStyle(
-                color: isAuthor ? Colors.black54 : Colors.white70,
-                fontSize: 16,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        (_mainAxisAlignment == MainAxisAlignment.start)
+        ? Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text(
+            timestamp,
+            style: TextStyle(color: Colors.black, fontSize: 12),
+          ),
+        ) : SizedBox(),
+      ],
     );
   }
 }
