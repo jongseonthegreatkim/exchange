@@ -117,13 +117,13 @@ class _InfoState extends State<Info> {
         children: [
           Text(
             '모집일정 안내',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Colors.black),
           ),
           SizedBox(height: 10),
           FittedBox(
             child: Text(
               '${widget.university} $latestKey까지',
-              style: TextStyle(color: Colors.black, fontSize: 20),
+              style: TextStyle(color: Colors.black, fontSize: 19),
             ),
           ),
           RichText(
@@ -131,11 +131,11 @@ class _InfoState extends State<Info> {
               children: [
                 TextSpan(
                   text: '$days$hours$minutes$seconds',
-                  style: TextStyle(color: Colors.redAccent, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.redAccent, fontSize: 19, fontWeight: FontWeight.bold),
                 ),
                 TextSpan(
                   text: " 남았어요!",
-                  style: TextStyle(color: Colors.black, fontSize: 20),
+                  style: TextStyle(color: Colors.black, fontSize: 19),
                 ),
               ],
             ),
@@ -212,7 +212,7 @@ class _InfoState extends State<Info> {
             children: [
               Text(
                 '지원가능 대학 목록',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Colors.black),
               ),
               GestureDetector(
                 onTap: () {
@@ -235,7 +235,7 @@ class _InfoState extends State<Info> {
           FittedBox(
             child: Text(
               '권역 별로 지원이 가능한 대학교 목록을 확인해보세요!',
-              style: TextStyle(color: Colors.black, fontSize: 20),
+              style: TextStyle(color: Colors.black, fontSize: 19),
             ),
           ),
           SizedBox(height: 10),
@@ -345,13 +345,13 @@ class _InfoState extends State<Info> {
         children: [
           Text(
             '지원조건 및 선발기준',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.black),
+            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Colors.black),
           ),
           SizedBox(height: 10),
           FittedBox(
             child: Text(
               "지원조건과 선발기준, 제출하는 어학성적을 체크해요!",
-              style: TextStyle(color: Colors.black, fontSize: 20),
+              style: TextStyle(color: Colors.black, fontSize: 19),
             ),
           ),
           SizedBox(height: 10),

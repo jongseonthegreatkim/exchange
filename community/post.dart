@@ -389,6 +389,7 @@ class _PostState extends State<Post> {
                   });
 
                   await FirebaseFirestore.instance.collection('posts').doc(widget.documentId).delete();
+
                   Navigator.of(context).pop();
                   Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Home(username: widget.username, university: widget.university, bottomIndex: 1)));
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('게시글이 정상적으로 신고되었습니다.')));
@@ -448,12 +449,8 @@ class _PostState extends State<Post> {
                     'timestamp' : FieldValue.serverTimestamp(),
                   });
 
-                  // 해당 reporter의 document에 접근
-                  // final querySnapshot = await FirebaseFirestore.instance.collection('users').where('userId', isEqualTo: blockerUid).get();
-                  // for(final doc in querySnapshot.docs) {
-                  //  final a = await FirebaseFirestore.instance.collection('users').doc(doc.id).get();
-                  //  print('a" $a');
-                  //}
+                  // // 해당 reporter의 document에 접근
+
 
                   final querySnapshot = await FirebaseFirestore.instance.collection('posts').where('userId', isEqualTo: widget.userId).get();
 
