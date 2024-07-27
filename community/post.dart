@@ -269,18 +269,6 @@ class _PostState extends State<Post> {
         if(currentUser != null && currentUser.uid != widget.userId)...[
           IconButton(
             onPressed: () {
-              _showReportDialog(context);
-            },
-            icon: Icon(Icons.report, color: Colors.black),
-          ),
-          IconButton(
-            onPressed: () {
-              _showBlockDialog(context);
-            },
-            icon: Icon(Icons.block, color: Colors.black),
-          ),
-          IconButton(
-            onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => Chat(
                 isAuthor: false,
                 postAuthorId: widget.userId,
@@ -290,6 +278,18 @@ class _PostState extends State<Post> {
               )));
             },
             icon: Icon(Icons.chat, color: Colors.black),
+          ),
+          IconButton(
+            onPressed: () {
+              _showReportDialog(context);
+            },
+            icon: Icon(Icons.report, color: Colors.black),
+          ),
+          IconButton(
+            onPressed: () {
+              _showBlockDialog(context);
+            },
+            icon: Icon(Icons.block, color: Colors.black),
           ),
           SizedBox(width: 15),
         ]
@@ -363,8 +363,8 @@ class _PostState extends State<Post> {
           backgroundColor: AppColors.backgroundColor,
           title: Text('게시글 신고하기'),
           content: Text(
-            '게시글을 신고하시겠습니까? '
-            '해당 사용자가 작성한 게시글과 댓글을 더 이상 보지 않게 됩니다. ',
+            '게시글을 신고하시겠습니까?'
+            '\n해당 사용자가 작성한 게시글과 댓글을\n더 이상 보지 않게 됩니다. ',
           ),
           actions: [
             TextButton(
@@ -424,8 +424,8 @@ class _PostState extends State<Post> {
           backgroundColor: AppColors.backgroundColor,
           title: Text('사용자 차단하기'),
           content: Text(
-            '사용자를 차단하시겠습니까? '
-            '해당 사용자가 작성한 게시글과 댓글을 더 이상 보지 않게 됩니다. ',
+            '사용자를 차단하시겠습니까?'
+            '\n해당 사용자가 작성한 게시글과 댓글을\n더 이상 보지 않게 됩니다. ',
           ),
           actions: [
             TextButton(

@@ -44,7 +44,7 @@ class _LoginState extends State<Login> {
                           Image.asset('assets/images/new_logo.png', width: 20, height: 20),
                           SizedBox(width: 5),
                           Text(
-                            '교환하냥',
+                            '대학교환',
                             style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.keyColor),
                           ),
                         ],
@@ -69,43 +69,33 @@ class _LoginState extends State<Login> {
     );
   }
 
-  Future<User?> signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth?.accessToken,
-      idToken: googleAuth?.idToken,
-    );
-
-    final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-
-    return userCredential.user;
-  }
-
   Widget googleLogin(BuildContext context) {
     return Center(
       child: ElevatedButton(
         onPressed: () async {
           User? user = await signInWithGoogle();
 
-          final doc = await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
+          // User canceled the sign-in
+          if(user == null) {
+            print('User canceled the sign-in or an error occurred.');
+            return; // Return to the login screen without crashing
+          }
+
+          final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
           final data = doc.data();
 
           if(data == null) {
-            if (user != null) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GetInfo(user: user),
-                ),
-              );
-            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GetInfo(user: user),
+              ),
+            );
           } else {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => Home(username: doc['username'], university: doc['university'], bottomIndex: 0,),
+                builder: (context) => Home(username: doc['username'], university: doc['university'], bottomIndex: 0),
               ),
             );
           }
@@ -139,19 +129,45 @@ class _LoginState extends State<Login> {
     );
   }
 
-  Future<User?> signInWithApple() async {
-    final appleProvider = AppleAuthProvider();
-    final UserCredential userCredential = await FirebaseAuth.instance.signInWithProvider(appleProvider);
-    return userCredential.user;
-  }
+  Future<User?> signInWithGoogle() async {
+    print('signInWithGoogle function is executed');
 
-  void temp() async {
-    final appleProvider = AppleAuthProvider();
-    await FirebaseAuth.instance.signInWithProvider(appleProvider).then((value) {
-      print(value.user?.email);
-    }).onError((error, stackTrace) {
-      print('Error: $error');
-    });
+    try {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      print('GoogleSignIn progress in done.');
+
+      // Check if the user canceled the sign-in
+      if(googleUser == null) {
+        print('User canceled the Google sign-in');
+        return null;
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication? googleAuth = await googleUser.authentication;
+      print('authentication Completed.');
+
+      // Check if the authentication object is valid
+      if(googleAuth == null || (googleAuth.accessToken == null && googleAuth.idToken == null)) {
+        print('GoogleAuth is invalid or missing tokens.');
+        return null;
+      }
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Once signed in, return the userCredential.user
+      return userCredential.user;
+    } catch (e) {
+      // Handle the error appropriately
+      print('Error during Google Sign-In: $e');
+      return null;
+    }
   }
 
   Widget appleLogin(BuildContext context) {
@@ -160,18 +176,21 @@ class _LoginState extends State<Login> {
         onPressed: () async {
           User? user = await signInWithApple();
 
-          final doc = await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
+          if(user == null) {
+            print('User canceled the sign-in or an error occurred.');
+            return; // Return to the login screen without crashing
+          }
+
+          final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
           final data = doc.data();
 
           if(data == null) {
-            if (user != null) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GetInfo(user: user),
-                ),
-              );
-            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GetInfo(user: user),
+              ),
+            );
           } else {
             Navigator.pushReplacement(
               context,
@@ -209,5 +228,21 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
+  }
+
+  Future<User?> signInWithApple() async {
+    try {
+      final appleProvider = AppleAuthProvider();
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithProvider(appleProvider);
+      return userCredential.user;
+    } catch (e) {
+      if(e is FirebaseAuthException && e.code == 'canceled') {
+        print('User canceled the Apple sign-in.');
+        return null;
+      } else {
+        print('Error during Apple Sign-In: $e');
+        return null;
+      }
+    }
   }
 }

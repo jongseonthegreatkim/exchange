@@ -30,8 +30,8 @@ void main() async {
 
   initializeTimeZones();
 
-  AppColors.keyColor = Color(0xFFFFF4F3); // 최초 색상은 이것으로 설정.
-  AppColors.keyColor = Color(0xFFEC8680); // 최초 색상은 이것으로 설정.
+  //AppColors.keyColor = Color(0xFFFFF4F3); // 최초 색상은 이것으로 설정.
+  //AppColors.keyColor = Color(0xFFEC8680); // 최초 색상은 이것으로 설정.
 
   runApp(ExchangeStudentApp());
 }
@@ -78,6 +78,7 @@ class ExchangeStudentApp extends StatelessWidget {
     return {'username': null, 'university': null};
   }
 
+  /*
   Future<void> _keyColorInitialization(String uid) async {
 
     DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
@@ -90,6 +91,7 @@ class ExchangeStudentApp extends StatelessWidget {
       AppColors.keyColor = universityKeyColor;
     }
   }
+  */
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +258,7 @@ class _HomeState extends State<Home> {
                 '업데이트 하기',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.keyColor,
+                  color: Colors.red,
                 ),
               ),
             ),
@@ -328,6 +330,7 @@ class _HomeState extends State<Home> {
     Text _appBarTitle = Text(
       '대학교환',
       style: TextStyle(
+        fontSize: 23,
         fontWeight: FontWeight.w700,
       ),
     );

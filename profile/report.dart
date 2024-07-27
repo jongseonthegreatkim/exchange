@@ -116,7 +116,7 @@ class _ReportState extends State<Report> {
               children: [
                 Expanded(
                   child: Text(
-                    '부적절한 사용자의 게시글 제목 또는 내용을 적어서 신고해주십시오 '
+                    '부적절한 사용자의 게시글 제목 또는 내용을 적어서 신고해주십시오. '
                     '회원님의 신고사항은 바로 개발자에게 전달되게 됩니다. '
                     '신고사항에 대한 답변은 하루 이내로 회원님의 이메일로 전달 될 예정입니다. ',
                     style: TextStyle(color: Colors.grey),

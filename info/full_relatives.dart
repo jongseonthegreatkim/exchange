@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../colors.dart';
@@ -17,20 +16,6 @@ class _FullRelativesState extends State<FullRelatives> {
   bool _isSearching = false;
   TextEditingController _searchController = TextEditingController();
   String _searchTerm = '';
-
-
-  void univAdder() async {
-    await FirebaseFirestore.instance.collection('universities').doc('고려대학교').update({
-      //'상대교' : sangDaeGyo,
-      //'일정' : iljeong,
-      //'기준' : gijun,
-    });
-  }
-  @override
-  void initState() {
-    super.initState();
-    univAdder();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +125,8 @@ class _FullRelativesState extends State<FullRelatives> {
 
     return Column(
       children: [
-        Container(
-          margin: EdgeInsets.only(left: 15, top: 15),
+        Padding(
+          padding: EdgeInsets.only(top: 15),
           child: Text(
             title,
             style: TextStyle(color: Colors.black, fontSize: 20),
@@ -152,9 +137,9 @@ class _FullRelativesState extends State<FullRelatives> {
           margin: EdgeInsets.fromLTRB(15, 0, 15, 15),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.grey.withOpacity(0.5), width: 0.35),
-              color: AppColors.backgroundColor,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.grey.withOpacity(0.5), width: 0.35),
+            color: AppColors.backgroundColor,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,14 +151,13 @@ class _FullRelativesState extends State<FullRelatives> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Flexible widget ensures that the 'Text' widget cna shrink to fit within the available space of the row without casuing overflow.
+                        // Flexible widget ensures that the 'Text' widget can shrink to fit within the available space of the row without casuing overflow.
                         Flexible(
                           child: Text(
                             university,
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 17,
-                              //overflow: TextOverflow.ellipsis,
                             ),
                             maxLines: 5,
                           ),

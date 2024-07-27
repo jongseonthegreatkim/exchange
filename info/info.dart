@@ -71,9 +71,7 @@ class _InfoState extends State<Info> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildScheduleSection(universityData!['일정']), // 모집 일정 안내
-              SizedBox(height: 30),
               _buildRelativesSection(universityData!['상대교']), // 지원 가능 대학 목록
-              SizedBox(height: 30),
               _buildCriteriaSection(universityData!['기준']), // 지원 조건 및 선발 기준
             ],
           ),
@@ -90,6 +88,24 @@ class _InfoState extends State<Info> {
     // Remove past dates and sort the list by DateTime values
     dateEntries = dateEntries.where((entry) => entry.value.isAfter(DateTime.now())).toList();
     dateEntries.sort((a, b) => a.value.compareTo(b.value));
+
+    if(dateEntries.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.university,
+            style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Colors.black),
+          ),
+          SizedBox(height: 6),
+          Text(
+            '현재 ${widget.university}의 남은 일정이 없습니다!',
+            style: TextStyle(fontSize: 18, color: Colors.black),
+          ),
+          SizedBox(height: 30),
+        ],
+      );
+    }
 
     String latestKey = dateEntries[0].key.toString();
     // 가장 가까운 이벤트의 DateTime 정보. -> FlutterLocalNotification 활용해서, 1일 남았을 때 연락 가게 해줘야 함.
@@ -111,61 +127,69 @@ class _InfoState extends State<Info> {
     minutes = mm!=0 ? '$mm분 ' : '';
     seconds = ss!=0 ? '$ss초' : '';
 
-    if(dateEntries.length != 0) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '모집일정 안내',
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Colors.black),
-          ),
-          SizedBox(height: 10),
-          FittedBox(
-            child: Text(
-              '${widget.university} $latestKey까지',
-              style: TextStyle(color: Colors.black, fontSize: 19),
-            ),
-          ),
-          RichText(
+    late String displayingLeftoverTime;
+    if(dd!=0) {
+      displayingLeftoverTime = days;
+    } else if(hh!=0) {
+      displayingLeftoverTime = hours;
+    } else if(mm!=0) {
+      displayingLeftoverTime = minutes;
+    } else {
+      displayingLeftoverTime = seconds;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.university,
+          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Colors.black),
+        ),
+        SizedBox(height: 6),
+        FittedBox(
+          child: RichText(
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: '$days$hours$minutes$seconds',
-                  style: TextStyle(color: Colors.redAccent, fontSize: 19, fontWeight: FontWeight.bold),
+                  text: '$latestKey까지 ',
+                  style: TextStyle(color: Colors.black, fontSize: 17),
                 ),
                 TextSpan(
-                  text: " 남았어요!",
-                  style: TextStyle(color: Colors.black, fontSize: 19),
+                  text: displayingLeftoverTime,
+                  style: TextStyle(color: Color(0xFFCC0000), fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+                TextSpan(
+                  text: "남았어요!",
+                  style: TextStyle(color: Colors.black, fontSize: 17),
                 ),
               ],
             ),
           ),
-          SizedBox(height: 15),
-          SizedBox(
-            height: 126,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              shrinkWrap: true,
-              children: [
-                ...dateEntries.map((entry) {
-                  bool _isFirst = false;
-                  if(entry.key == latestKey)
-                    _isFirst = true;
-                  return _buildScheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), '캘린더에 추가', _isFirst);
-                }),
-              ],
-            ),
+        ),
+        SizedBox(height: 10),
+        SizedBox(
+          height: 126,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            shrinkWrap: true,
+            children: [
+              ...dateEntries.map((entry) {
+                bool _isFirst = false;
+                if(entry.key == latestKey)
+                  _isFirst = true;
+                return _buildScheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), '캘린더에 추가', _isFirst);
+              }),
+            ],
           ),
-        ],
-      );
-    } else {
-      return Container(); // dateEntries가 없는 경우 -> 그냥 ScheduleSection을 없앤다.
-    }
+        ),
+        SizedBox(height: 30),
+      ],
+    );
   }
   Widget _buildScheduleCard(String title, String date, String calendar, bool _isFirst) {
 
     final Color _backgroundColor;
-    _isFirst == true ? _backgroundColor = AppColors.keyColor.withOpacity(0.3) : _backgroundColor = AppColors.backgroundColor;
+    _isFirst == true ? _backgroundColor = AppColors.keyBackgroundColor : _backgroundColor = AppColors.backgroundColor;
 
     return Container(
       margin: EdgeInsets.only(right: 10),
@@ -231,11 +255,11 @@ class _InfoState extends State<Info> {
               ),
             ],
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 6),
           FittedBox(
             child: Text(
               '권역 별로 지원이 가능한 대학교 목록을 확인해보세요!',
-              style: TextStyle(color: Colors.black, fontSize: 19),
+              style: TextStyle(color: Colors.black, fontSize: 18),
             ),
           ),
           SizedBox(height: 10),
@@ -259,6 +283,7 @@ class _InfoState extends State<Info> {
               ],
             ),
           ),
+          SizedBox(height: 30),
         ],
       );
     } else {
@@ -287,11 +312,11 @@ class _InfoState extends State<Info> {
               children: [
                 TextSpan(
                   text: title,
-                  style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Color(0xFFCC0000), fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextSpan(
                   text: ' 대학',
-                  style: TextStyle(color: Colors.black, fontSize: 18),
+                  style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -347,11 +372,11 @@ class _InfoState extends State<Info> {
             '지원조건 및 선발기준',
             style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Colors.black),
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 6),
           FittedBox(
             child: Text(
               "지원조건과 선발기준, 제출하는 어학성적을 체크해요!",
-              style: TextStyle(color: Colors.black, fontSize: 19),
+              style: TextStyle(color: Colors.black, fontSize: 18),
             ),
           ),
           SizedBox(height: 10),
@@ -401,7 +426,7 @@ class _InfoState extends State<Info> {
               children: [
                 TextSpan(
                   text: standard,
-                  style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Color(0xFFCC0000), fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),

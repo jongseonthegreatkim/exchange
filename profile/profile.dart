@@ -101,7 +101,7 @@ class _ProfileState extends State<Profile> {
       ),
       child: Row(
         children: [
-          Icon(Icons.person, size: 100, color: AppColors.keyColor),
+          Icon(Icons.person, size: 100, color: Colors.red),
           SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +147,7 @@ class _ProfileState extends State<Profile> {
         SizedBox(height: 10),
         _buildSettingCard("계정 설정", ['로그아웃', '계정 삭제']),
         SizedBox(height: 10),
-        _buildSettingCard("Contact Us", ['문의하기', '신고하기', '개발진']),
+        _buildSettingCard("Contact Us", ['건의하기', '신고하기', '개발진']),
         SizedBox(height: 10),
         //_buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
       ],
@@ -175,7 +175,7 @@ class _ProfileState extends State<Profile> {
                   _showLogoutDialog(context); // show the confirmation dialog
                 } else if(content == '계정 삭제') {
                   _showDeleteAccountDialog(context); // show the confirmation dialog
-                } else if(content == '문의하기') {
+                } else if(content == '건의하기') {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => Suggestion()));
                 } else if(content == '신고하기') {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => Report()));
@@ -212,7 +212,7 @@ class _ProfileState extends State<Profile> {
               },
               child: Text(
                 '취소',
-                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
             ),
             TextButton(
@@ -246,9 +246,9 @@ class _ProfileState extends State<Profile> {
           backgroundColor: AppColors.backgroundColor,
           title: Text('계정 삭제'),
           content: Text(
-            '계정을 삭제 하시면, 작성하신 게시글 및 댓글에 더 이상 접근 및 수정이 불가능합니다. '
-            '그래도 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다. '
-            '삭제를 위해서 재 로그인이 필요합니다.',
+            '계정을 삭제 하시면,\n작성하신 게시글 및 댓글에\n더 이상 접근 및 수정이 불가능합니다.'
+            '\n그래도 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'
+            '\n삭제를 위해서 재 로그인이 필요합니다.',
           ),
           actions: [
             TextButton(
@@ -257,7 +257,7 @@ class _ProfileState extends State<Profile> {
               },
               child: Text(
                 '취소',
-                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
             ),
             TextButton(

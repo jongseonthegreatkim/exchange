@@ -42,6 +42,9 @@ class _CommunityState extends State<Community> {
 
   // 종국적으로 _fetchInitialPosts와 _fetchMorePosts의 통합을 추진해야 한다
   Future<void> _fetchInitialPosts() async {
+
+    print('_fIP Started');
+
     setState(() {
       _isFetching = true;
     });
@@ -67,12 +70,13 @@ class _CommunityState extends State<Community> {
       // Store the fetched posts in a state variable
       if(filteredDocs.isNotEmpty) {
         if(mounted) { // check if the widget is still mounted
+          await _fetchAdditionalData(filteredDocs);
+
           setState(() {
             _posts.addAll(filteredDocs); // Add all fetched documents to _posts
             _lastDocument = filteredDocs.last;
             _isFetching = false; // Set fetching to false once data is loaded
           });
-          _fetchAdditionalData(filteredDocs);
         }
       } else {
         if(mounted) { // check if the widget is still mounted
@@ -125,7 +129,8 @@ class _CommunityState extends State<Community> {
             _lastDocument = filteredDocs.last;
             _isFetching = false;
           });
-          _fetchAdditionalData(filteredDocs);
+
+          await _fetchAdditionalData(filteredDocs);
         }
       } else {
         if(mounted) { // check if the widget is still mounted
@@ -152,12 +157,17 @@ class _CommunityState extends State<Community> {
       _posts.clear();
       _lastDocument = null;
       _hasMorePosts = true;
+      // _fetchAdditionalData에서 이 두 값의 key에 postId가 없는 경우에만 (좋아요 수, 댓글 수)를 value로 추가하기 때문에,
+      // 이 두 값을 리셋해줘야 함.
+      likesCountCache = {};
+      reactionsCountCache = {};
     });
     await _fetchInitialPosts();
   }
 
   // called in _fetchInitialPosts and _fetchMorePosts
   Future<void> _fetchAdditionalData(List<DocumentSnapshot> posts) async {
+    /*
     for (var post in posts) {
       String postId = post.id;
       if (!likesCountCache.containsKey(postId)) {
@@ -167,6 +177,35 @@ class _CommunityState extends State<Community> {
         reactionsCountCache[postId] = await _fetchReactionsCount(postId);
       }
     }
+    */
+
+    // Down here is much faster version of fetching additional data than upper one.
+    // I need to know why
+
+    print('_fAD Started');
+
+    List<Future<int>> likesFutures = [];
+    List<Future<int>> reactionsFutures = [];
+    List<String> postIds = posts.map((post) => post.id).toList();
+    print('postIds: $postIds');
+
+    for (var postId in postIds) {
+      if (!likesCountCache.containsKey(postId)) {
+        likesFutures.add(_fetchLikesCount(postId));
+      }
+      if (!reactionsCountCache.containsKey(postId)) {
+        reactionsFutures.add(_fetchReactionsCount(postId));
+      }
+    }
+
+    List<int> likesCounts = await Future.wait(likesFutures);
+    List<int> reactionsCounts = await Future.wait(reactionsFutures);
+
+    for (int i = 0; i < postIds.length; i++) {
+      likesCountCache[postIds[i]] = likesCounts[i];
+      reactionsCountCache[postIds[i]] = reactionsCounts[i];
+    }
+
     setState(() {});
   }
 
@@ -232,37 +271,6 @@ class _CommunityState extends State<Community> {
               int reactionsCount = reactionsCountCache[postId] ?? 0;
 
               return _buildPostCard(title, content, timestamp, userId, postId, likesCount, reactionsCount);
-
-              /*
-              // As we using _fetchReactionsCount function that returns 'Future<int>' type, we need to use FutureBUilder
-              return FutureBuilder<int>(
-                future: _fetchReactionsCount(postId),
-                builder: (context, reactionsSnapshot) {
-                  if(reactionsSnapshot.connectionState == ConnectionState.waiting) {
-                    return Container(); // 여기에 CircularProgressInciator 넣으면 UI가 너무 지저분해 보임.
-                  } else if(reactionsSnapshot.hasError) {
-                    return Text('Error: ${reactionsSnapshot.error}');
-                  } else {
-                    int reactionsCount = reactionsSnapshot.data ?? 0;
-                    // As we using _fetchLikesCount function that return 'Future<int>' type, we need to use FutureBuilder
-                    return FutureBuilder<int>(
-                      future: _fetchLikesCount(postId),
-                      builder: (context, likesSnapshot) {
-                        if(likesSnapshot.connectionState == ConnectionState.waiting) {
-                          return Container(); // 여기에 CircularProgressInciator 넣으면 UI가 너무 지저분해 보임.
-                        } else if(likesSnapshot.hasError) {
-                          return Text('Error: ${likesSnapshot.error}');
-                        } else {
-                          int likesCount = likesSnapshot.data ?? 0;
-                          return _buildPostCard(title, content, timestamp, userId, postId, likesCount, reactionsCount);
-                        }
-                      },
-                    );
-                  }
-                },
-              );
-
-              */
             },
           ),
         ),
@@ -335,6 +343,7 @@ class _CommunityState extends State<Community> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 제목 & 내용
             Text(
               title,
               style: TextStyle(
