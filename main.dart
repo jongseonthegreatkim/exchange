@@ -6,6 +6,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:timezone/data/latest.dart';
 
+// Global State Management
+import 'package:provider/provider.dart';
+import '../myProvider.dart';
+
+// Firebase Remote Configuration related packages
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,6 +18,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'login/login.dart';
 import 'login/get_info.dart';
 import 'info/info.dart';
+import 'info/new_info.dart'; // 건국대학교 한정!
 import 'info/my_chats.dart';
 import 'community/community.dart';
 import 'profile/profile.dart';
@@ -20,29 +26,30 @@ import 'colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await initializeRemoteConfig(); // 버전 자동 업데이트를 위한 Firebase - Remote Configuration
+  // Firebase Remote Configuration for auto-update of the version of the application
+  await initializeRemoteConfig();
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler); // 푸시 알림을 위한 Firebase - Cloud Message
-
+  // Firebase - Cloud Message for push notification
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   initializeTimeZones();
 
-  //AppColors.keyColor = Color(0xFFFFF4F3); // 최초 색상은 이것으로 설정.
-  //AppColors.keyColor = Color(0xFFEC8680); // 최초 색상은 이것으로 설정.
-
-  runApp(ExchangeStudentApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PaperStandard()),
+      ],
+      child: ExchangeStudentApp(),
+    ),
+  );
 }
 
 Future<void> initializeRemoteConfig() async {
   final remoteConfig = FirebaseRemoteConfig.instance;
 
   // Set default values
-  await remoteConfig.setDefaults({
-    'requiredMinimumVersion' : '1.5.0',
-  });
+  await remoteConfig.setDefaults({'requiredMinimumVersion' : '1.5.0'});
 
   // Set configuration
   await remoteConfig.setConfigSettings(
@@ -78,30 +85,17 @@ class ExchangeStudentApp extends StatelessWidget {
     return {'username': null, 'university': null};
   }
 
-  /*
-  Future<void> _keyColorInitialization(String uid) async {
-
-    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-    if(doc['색상'] != null) {
-      String colorString = doc['색상'];
-
-      Color universityKeyColor = Color(int.parse(colorString.replaceFirst('#', '0xFF')));
-
-      AppColors.keyColor = universityKeyColor;
-    }
-  }
-  */
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'Pretendard', // Set a base font to 'Pretendard'
+        // Set a base font to 'Pretendard'
+        fontFamily: 'Pretendard',
       ),
       home: FutureBuilder(
-        future: FirebaseAuth.instance.authStateChanges().first, // Get the current user state
+        // Get the current user state
+        future: FirebaseAuth.instance.authStateChanges().first,
         builder: (context, AsyncSnapshot<User?> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Scaffold(
@@ -132,11 +126,7 @@ class ExchangeStudentApp extends StatelessWidget {
                     // User is logged in but needs to enter additional information
                     return GetInfo(user: user);
                   } else {
-
-                    // 최초 로그인이 아니라고 결정 났는데 -> 색상은 main.dart에서 초기화 되기 때문에 -> 현재 철회
-                    // _keyColorInitialization(user.uid.toString());
-
-                    // User is logged in and has their data stored in Firestore
+                    // User is logged in and their data are stored in Firestore
                     return Home(
                       username: userInfo!['username']!,
                       university: userInfo['university']!,
@@ -147,7 +137,7 @@ class ExchangeStudentApp extends StatelessWidget {
               },
             );
           } else {
-            // User is not logged in
+            // User is not logged in yet
             return Login();
           }
         },
@@ -470,7 +460,11 @@ class _HomeState extends State<Home> {
 
   Widget _body(BuildContext context, int index) {
     if (index == 0) {
-      return Info(university: widget.university);
+      if(widget.university == '건국대학교') {
+        return NewInfo(university: widget.university);
+      } else {
+        return Info(university: widget.university);
+      }
     } else if (index == 1) {
       return Community(username: widget.username, university: widget.university, searchField: _searchField);
     } else {

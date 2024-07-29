@@ -1,24 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For DateTime
 import 'dart:async'; // For Timer
+
 import 'full_relatives.dart';
+import 'paper_to_submit.dart';
 import '../colors.dart';
 
-class Info extends StatefulWidget {
-  const Info({super.key, required this.university});
+class NewInfo extends StatefulWidget {
+  const NewInfo({super.key, required this.university});
 
   final String university;
 
   @override
-  State<Info> createState() => _InfoState();
+  State<NewInfo> createState() => _NewInfoState();
 }
 
-class _InfoState extends State<Info> {
-  // _timer variable to update leftover time every second.
+class _NewInfoState extends State<NewInfo> {
+  // Fetching basic data (universityData & '미준비서류')
+  Future<void> _initialFetch() async {
+    try {
+      await _fetchUniversityData();
+      await _paperCardBool();
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
+  }
+
+  // Fetch university data from Firestore
+  Map<String, dynamic>? universityData;
+  Future<void> _fetchUniversityData() async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('universities').doc(widget.university).get();
+    setState(() {
+      universityData = doc.data() as Map<String, dynamic>?;
+    });
+  }
+
+  // For distinguish that user already has '미준비서류' field inside of uid document
+  bool? _isFieldExist;
+  List<dynamic> leftoverPapers = [];
+  List<dynamic> donePapers = [];
+  Future<void> _paperCardBool() async {
+    // initialize leftoverPapers with whole '문서' in '서류'.
+    leftoverPapers = universityData!['서류']['문서'];
+
+    // Get the document snapshot
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+    DocumentSnapshot uidSnapshot = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    Map<String, dynamic> uidData = uidSnapshot.data() as Map<String, dynamic>;
+
+    // put the existance of 미준비서류 field to _isFieldExist
+    _isFieldExist = uidData.containsKey('미준비서류');
+
+    if(_isFieldExist == true) {
+      leftoverPapers = uidData['미준비서류'];
+      donePapers = universityData!['서류']['문서'].where((element) => !leftoverPapers.contains(element)).toList();
+    }
+  }
+
+  // To update leftover time every second.
   Timer? _timer;
   DateTime _now = DateTime.now();
-
   void _startTimer() {
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
@@ -27,35 +70,24 @@ class _InfoState extends State<Info> {
     });
   }
 
-  Map<String, dynamic>? universityData;
-
-  Future<void> _fetchUniversityData() async {
-    try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('universities').doc(widget.university).get();
-      setState(() {
-        universityData = doc.data() as Map<String, dynamic>?;
-      });
-    } catch (e) {
-      print('Error fetching university data: $e');
-    }
-  }
-
   @override
   void initState() {
+    print('new_info.dart initState');
     super.initState();
+    _initialFetch();
     _startTimer();
-    _fetchUniversityData();
   }
 
   @override
   void dispose() {
-    _timer?.cancel(); // Cancel the time when the widget is disposed
     super.dispose();
+    _timer?.cancel(); // Cancel the time when the widget is disposed
   }
 
   @override
   Widget build(BuildContext context) {
-    if(universityData == null) {
+    // _isFieldExist를 넣어서, _paperCardBool이 실행 중일 때는 UI를 그리지 못 하게 함.
+    if(universityData == null || _isFieldExist == null) {
       return Center(
         child: CircularProgressIndicator(
           color: AppColors.keyColor,
@@ -70,9 +102,10 @@ class _InfoState extends State<Info> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildScheduleSection(universityData!['일정']), // 모집 일정 안내
-              _buildRelativesSection(universityData!['상대교']), // 지원 가능 대학 목록
-              _buildCriteriaSection(universityData!['기준']), // 지원 조건 및 선발 기준
+              _buildScheduleSection(universityData!['일정']),
+              _buildCriteriaSection(), // universityData!['기준']
+              _buildPaperBanner(), // universityData!['서류']
+              _buildRelativesSection(universityData!['상대교']),
             ],
           ),
         ),
@@ -83,7 +116,7 @@ class _InfoState extends State<Info> {
   Widget _buildScheduleSection(Map<String, dynamic> schedule) {
     // Convert Firestore Timestamps to DateTime and keep keys
     List<MapEntry<String, DateTime>> dateEntries = schedule.entries.map((entry)
-      => MapEntry(entry.key, (entry.value as Timestamp).toDate())).toList();
+    => MapEntry(entry.key, (entry.value as Timestamp).toDate())).toList();
 
     // Remove past dates and sort the list by DateTime values
     dateEntries = dateEntries.where((entry) => entry.value.isAfter(DateTime.now())).toList();
@@ -168,7 +201,7 @@ class _InfoState extends State<Info> {
         ),
         SizedBox(height: 10),
         SizedBox(
-          height: 126,
+          height: 120,
           child: ListView(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
@@ -195,30 +228,134 @@ class _InfoState extends State<Info> {
       margin: EdgeInsets.only(right: 10),
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
         color: _backgroundColor,
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
+        borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w700),
+            style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 10),
           Text(
             date,
             style: TextStyle(color: Colors.black, fontSize: 16),
           ),
-          SizedBox(height: 25),
+          SizedBox(height: 20),
           GestureDetector(
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
             },
-            child: Text(calendar, style: TextStyle(fontSize: 15)),
+            child: Text(calendar, style: TextStyle(color: Colors.black, fontSize: 15)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCriteriaSection() {
+    Map<String, dynamic>? criteria = universityData!['기준'];
+
+    // 선발 기준, 제출 가능 어학성적 및 커트라인, 지원 조건 등
+    List<String> standards = (criteria != null) ? criteria.keys.toList() : [];
+
+    if(criteria == null)
+      return Container(); // criteria가 없는 경우 -> 그냥 CriteriaSection을 없앤다.
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            ...standards.map((standard) {
+              List<dynamic> standardContents = criteria[standard].values.toList();
+
+              //return Container(child: Text('123'));
+              return _buildCriteriaButton(standard, standardContents);
+            }),
+          ],
+        ),
+        SizedBox(height: 30),
+      ],
+    );
+  }
+  Widget _buildCriteriaButton(String standard, List<dynamic> standardContents) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
+        color: AppColors.backgroundColor,
+      ),
+      child: Center(
+        child: Text(
+          standard,
+          style: TextStyle(
+            color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaperBanner() {
+    Map<String, dynamic>? paper = universityData!['서류'];
+
+    // 아직 '서류' 필드가 준비되지 않은 대학교의 경우
+    if(paper == null)
+      return SizedBox();
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaperToSubmit(
+              university: widget.university,
+              leftoverPapers: leftoverPapers,
+              donePapers: donePapers,
+              warnings: paper['주의사항'],
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        margin: EdgeInsets.only(bottom: 30),
+        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        decoration: BoxDecoration(
+          color: Color(0xFFD1E0EC),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            (_isFieldExist == true)
+            ? Icon(Icons.warning, color: Color(0xFFDA3B3B), size: 30)
+            : Icon(Icons.subject, color: Color(0xFF000000), size: 30),
+            SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  (_isFieldExist == true) ? '아직 준비 하지 못한 서류 ${leftoverPapers.length}가지' : '${widget.university} 제출 서류',
+                  style: TextStyle(
+                    color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  (_isFieldExist == true) ? '다시 확인하기' : '1분 만에 확인하기',
+                  style: TextStyle(
+                    color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -323,16 +460,16 @@ class _InfoState extends State<Info> {
           ),
           SizedBox(height: 8),
           ...universities.map((university) =>
-            Column(
-              children: [
-                Text(university, style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 15,
-                  overflow: TextOverflow.ellipsis,
-                )),
-                SizedBox(height: 5),
-              ],
-            ),
+              Column(
+                children: [
+                  Text(university, style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 15,
+                    overflow: TextOverflow.ellipsis,
+                  )),
+                  SizedBox(height: 5),
+                ],
+              ),
           ),
           SizedBox(height: 15),
           GestureDetector(
@@ -349,64 +486,6 @@ class _InfoState extends State<Info> {
     );
   }
 
-  Widget _buildCriteriaSection(Map<String, dynamic>? criteria) {
-
-    // 선발 기준, 제출 가능 어학성적 및 커트라인, 지원 조건
-    List<String> standards = (criteria != null) ? criteria.keys.toList() : [];
-
-    /// 이거 실효성 있는 지 체크해야 함.
-    List<String> desiredOrder = ['지원 조건', '선발 기준', '제출 가능 어학성적 및 커트라인'];
-
-    // desiredOrder에 맞게 standards를 재배열
-    standards.sort((a, b) {
-      int indexA = desiredOrder.indexOf(a);
-      int indexB = desiredOrder.indexOf(b);
-      return indexA.compareTo(indexB);
-    });
-
-    if(criteria != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '지원조건 및 선발기준',
-            style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Colors.black),
-          ),
-          SizedBox(height: 6),
-          FittedBox(
-            child: Text(
-              "지원조건과 선발기준, 제출하는 어학성적을 체크해요!",
-              style: TextStyle(color: Colors.black, fontSize: 18),
-            ),
-          ),
-          SizedBox(height: 10),
-          ListView(
-            scrollDirection: Axis.vertical,
-            physics: NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            children: [
-              ...standards.map((standard) {
-                List standardContents = criteria[standard].values.toList(); // 조건 목록들
-
-                // resort criteria['standard'] based on order of criteria['standard'].key
-                List<MapEntry<String, dynamic>> sortedEntries = criteria[standard].entries.toList()..sort((a, b) => int.parse(a.key).compareTo(int.parse(b.key)));
-                // Re-put sorted value into standardContents
-                standardContents = sortedEntries.map((entry) => entry.value).toList();
-
-                String etc = '내 성적 입력하기';
-                (standard == '선발 기준') ? (etc = '빈칸') : ((standard == '지원 조건') ? (etc = '자세히 보기') : null);
-                return _buildCriteriaCard('${widget.university} ', standard, standardContents, etc);
-              }),
-            ],
-          ),
-        ],
-      );
-    } else {
-      return Container(); // criteria가 없는 경우 -> 그냥 CriteriaSection을 없앤다.
-    }
-
-
-  }
   Widget _buildCriteriaCard(String university, String standard, List<dynamic> standdardContents, String etc) {
     return Container(
       margin: EdgeInsets.only(bottom: 10),
@@ -433,12 +512,12 @@ class _InfoState extends State<Info> {
           ),
           SizedBox(height: 8),
           ...standdardContents.map((standardContent) =>
-            Column(
-              children: [
-                Text(standardContent, style: TextStyle(fontSize: 15)),
-                SizedBox(height: 5),
-              ],
-            ),
+              Column(
+                children: [
+                  Text(standardContent, style: TextStyle(fontSize: 15)),
+                  SizedBox(height: 5),
+                ],
+              ),
           ),
           if(etc != "빈칸")...[
             SizedBox(height: 15),

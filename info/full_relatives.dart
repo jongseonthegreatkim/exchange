@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../colors.dart';
@@ -16,6 +17,21 @@ class _FullRelativesState extends State<FullRelatives> {
   bool _isSearching = false;
   TextEditingController _searchController = TextEditingController();
   String _searchTerm = '';
+
+  void univAdder() async {
+    await FirebaseFirestore.instance.collection('universities').doc('건국대학교').update({
+      //'상대교' : sangDaeGyo,
+      //'일정' : iljeong,
+      //'기준' : gijun,
+      //'서류' : seoryu,
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    univAdder();
+  }
 
   @override
   Widget build(BuildContext context) {

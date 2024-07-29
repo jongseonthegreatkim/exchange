@@ -11,6 +11,28 @@ Map<String, Map<String, String>> sangDaeGyo = {
 };
 */
 
+Map<String, dynamic> seoryu = {
+  '문서' : [
+    '공인어학성적표',
+    '여권사본',
+    '영문 학교성적표',
+    '개인정보이용동의서',
+    '해외파견학생 서약서',
+  ],
+  '주의사항' : [
+    '국제교류협력팀 이메일(wowjjy@konkuk.ac.kr)로 제출',
+    '제목 형식 - 2025.1학기 + 지원 프로그램명 + 성명(여권영문성명)_지원시험명 + 점수',
+    '내용 작성 불 필요',
+    '해외 사용이 가능한 이메일 사용 (Gmail 권장)',
+    '고화질 컬러로 스캔한 뒤, 순서대로 병합해 하나의 PDF 파일로 제출',
+    '양식 확인하기 - https://forms.gle/xkG9Lm8V8adRxd327',
+    '학적 상 영문성명을 여권성명과 동일하게 설정',
+    'TOEFL & IELTS - 학교 별 인정 형태 확인 후 제출',
+    'LTS - Academic 모듈 성적표만 인정',
+    '기존 파견자들의 수학보고서 보는 법 - 국제교류협력팀 -> 자료실 -> 수학보고서',
+  ],
+};
+
 Map<String, Timestamp> iljeong = {
   '2025-1 합격자 발표 및 수락서명 시작' : Timestamp.fromDate(DateTime(2024, 07, 24, 13, 00)),
   '2025-1 합격자 발표 및 수락서명 마감' : Timestamp.fromDate(DateTime(2024, 07, 26, 15, 00)),
@@ -88,6 +110,7 @@ void univAdder() async {
     '기준' : gijun,
   });
 }
+
 @override
 void initState() {
   super.initState();
