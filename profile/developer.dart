@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../colors.dart';
+
+import '../statics.dart';
 
 class Developer extends StatefulWidget {
   const Developer({super.key});
@@ -10,49 +12,103 @@ class Developer extends StatefulWidget {
 }
 
 class _DeveloperState extends State<Developer> {
+  // State variable that will contain data from Firestore
+  Map<String, dynamic> developerData = {};
+  Map<String, dynamic> helpersData = {};
+
+  // 무한 future loading을 막기 위해서 fetchData에 대응하는 future를 하나 만든다.
+  late Future<void> fetchDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDataFuture = fetchData();
+  }
+
+  Future<void> fetchData() async {
+    DocumentSnapshot<Map<String, dynamic>> developerSnapshot = await FirebaseFirestore.instance
+        .collection('developer')
+        .doc('개발진')
+        .get();
+
+    DocumentSnapshot<Map<String, dynamic>> helpersSnapshot = await FirebaseFirestore.instance
+        .collection('developer')
+        .doc('도움 주신 분들')
+        .get();
+
+    setState(() {
+      developerData = developerSnapshot.data()!;
+      helpersData = helpersSnapshot.data()!;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
-        title: Text('개발진 정보'),
-        titleSpacing: 0, // To make title to stay at the middle
-      ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _developerProfile(), // 프로필 섹션
-              SizedBox(height: 20),
-              _developerInfo(), // 개인정보 섹션
-            ],
-          ),
-        ),
-      ),
+      backgroundColor: AppColors.white,
+      appBar: _appBar(context),
+      body: _body(context),
     );
   }
 
-  Widget _developerProfile() {
+  AppBar _appBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: AppColors.white,
+      scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
+      title: const Text('개발진 정보'),
+      titleSpacing: 0, // To make title to stay at the middle
+    );
+  }
+
+  Widget _body(BuildContext context) {
+    return FutureBuilder(
+      future: fetchDataFuture,
+      builder: (context, snapshot) {
+        if(snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: AppColors.keyColor,
+              backgroundColor: AppColors.white,
+            ),
+          );
+        } else {
+          return SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _developerProfileSection(),
+                  const SizedBox(height: 20),
+                  _developerContactSection(),
+                  const SizedBox(height: 10),
+                  _helperContactSection(),
+                ],
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Widget _developerProfileSection() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey, width: 0.5),
-        color: AppColors.backgroundColor,
+        color: AppColors.white,
       ),
       child: Row(
         children: [
-          Icon(Icons.person, size: 100, color: AppColors.keyColor),
-          SizedBox(width: 10),
-          Column(
+          Icon(Icons.person_pin_rounded, size: 80, color: AppColors.keyColor),
+          const SizedBox(width: 20),
+          const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('김종선', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              Text('Team 2729', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               Text('한양대학교', style: TextStyle(fontSize: 15)),
             ],
@@ -62,147 +118,29 @@ class _DeveloperState extends State<Developer> {
     );
   }
 
-  Widget _developerInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInfoCard("개발진 연락처", ['카카오톡 오픈프로필', '인스타그램', '전화', '메일']),
-        SizedBox(height: 10),
-        _buildHelperInfoCard('도움 주신 분들', ['yiyoonchul', 'hakjaee_204', 'dlrkqfh']),
-      ],
-    );
-  }
-
-  Widget _buildInfoCard(String title, List<String> contents) {
+  Widget _developerContactSection() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Colors.grey, width: 1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-          ...contents.map((content) =>
-              GestureDetector(
-                onTap: () async {
-                  if(content == '카카오톡 오픈프로필') {
-                    Uri url = Uri.parse('https://open.kakao.com/o/srhnKkBg');
-                    await canLaunchUrl(url) ? launchUrl(url) : print('Launch failed: $url');
-                  } else if(content == '인스타그램') {
-                    Uri url = Uri.parse('https://www.instagram.com/exchange_univ/');
-                    await canLaunchUrl(url) ? launchUrl(url) : print('Launch failed: $url');
-                  } else if(content == '전화') {
-                    _showPhoneDialog(context);
-                  } else if(content == '메일') {
-                    _showMailDialog(context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
-                  }
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text(content, style: TextStyle(fontSize: 16)),
-                ),
-              ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPhoneDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
-          title: Text('개발진 대표 전화번호'),
-          content: Text('010-2658-4379'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text(
-                '확인',
-                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showMailDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
-          title: Text('개발진 대표 메일'),
-          content: Text('crushgagarin1961@naver.com'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text(
-                '확인',
-                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHelperInfoCard(String title, List<String> contents) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey, width: 1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-          ...contents.map((content) =>
+          const Text("대학교환 공식 연락처", style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+          ...developerData.entries.map((entry) =>
             GestureDetector(
               onTap: () async {
-                if(content == 'yiyoonchul') {
-                  Uri url = Uri.parse('https://www.instagram.com/yiyoonchul/');
-                  await canLaunchUrl(url) ? launchUrl(url) : print('Launch failed: $url');
-                } else if(content == 'hakjaee_204') {
-                  Uri url = Uri.parse('https://www.instagram.com/hakjaee_204/');
-                  await canLaunchUrl(url) ? launchUrl(url) : print('Launch failed: $url');
-                } else if(content == 'dlrkqfh') {
-                  Uri url = Uri.parse('https://www.instagram.com/dlrkqfh/');
-                  await canLaunchUrl(url) ? launchUrl(url) : print('Launch failed: $url');
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
-                }
+                await _developerContactOnTap(entry.key, entry.value);
               },
-              child: Row(
-                children: [
-                  Image.asset('assets/images/instagram_logo.png', width: 20),
-                  SizedBox(width: 10),
-                  Container(
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Text(content, style: TextStyle(fontSize: 16)),
-                  ),
-                ],
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  entry.key,
+                  style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w500),
+                ),
               ),
             ),
           ),
@@ -211,4 +149,77 @@ class _DeveloperState extends State<Developer> {
     );
   }
 
+  Future<void> _developerContactOnTap(String key, String value) async {
+    if(key == '인스타그램' || key == '카카오톡 오픈채팅') {
+      Uri url = Uri.parse(value);
+      await canLaunchUrl(url) ? launchUrl(url) : print('Launch failed: $url');
+    }
+    if(key == '메일') {
+      Uri url = Uri(
+        scheme: 'mailto',
+        path: value,
+      );
+      await canLaunchUrl(url) ? launchUrl(url) : print('Mail app launch failed: $url');
+    }
+    if(key == '전화') {
+      _showContactDialog(context, key, value);
+    }
+  }
+  void _showContactDialog(BuildContext context, String key, String value) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.white,
+          title: Text(key),
+          content: Text(value),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text(
+                '확인',
+                style: TextStyle(color: AppColors.keyColor, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _helperContactSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.grey, width: 1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("도움 주신 분들", style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+          ...helpersData.entries.map((entry) =>
+            GestureDetector(
+              onTap: () async {
+                Uri url = Uri.parse(entry.value);
+                await canLaunchUrl(url) ? launchUrl(url) : print('Launch failed: $url');
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  '@${entry.key}',
+                  style: const TextStyle(color: Colors.black45, fontSize: 17, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

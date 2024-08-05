@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For DateTime
+import 'package:url_launcher/url_launcher.dart'; // For phone call or something.
 import 'dart:async'; // For Timer
 
 import 'full_relatives.dart';
 import 'paper_to_submit.dart';
-import '../colors.dart';
+import 'standard_page.dart';
+import 'changed_things.dart';
+
+import '../statics.dart'; // 모든 전역 상수 저장 장소
 
 class NewInfo extends StatefulWidget {
-  const NewInfo({super.key, required this.university});
+  const NewInfo({super.key, required this.username, required this.university});
 
+  final String username;
   final String university;
 
   @override
@@ -72,7 +77,6 @@ class _NewInfoState extends State<NewInfo> {
 
   @override
   void initState() {
-    print('new_info.dart initState');
     super.initState();
     _initialFetch();
     _startTimer();
@@ -88,24 +92,21 @@ class _NewInfoState extends State<NewInfo> {
   Widget build(BuildContext context) {
     // _isFieldExist를 넣어서, _paperCardBool이 실행 중일 때는 UI를 그리지 못 하게 함.
     if(universityData == null || _isFieldExist == null) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: AppColors.keyColor,
-          backgroundColor: AppColors.backgroundColor,
-        ),
-      );
+      return Center(child: AppLoading.CPI);
     } else {
       return SingleChildScrollView(
         child: Container(
-          color: AppColors.backgroundColor,
-          margin: EdgeInsets.all(15),
+          color: AppColors.white,
+          margin: const EdgeInsets.all(15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildScheduleSection(universityData!['일정']),
-              _buildCriteriaSection(), // universityData!['기준']
-              _buildPaperBanner(), // universityData!['서류']
-              _buildRelativesSection(universityData!['상대교']),
+              _scheduleSection(), // ['일정']이 있으면 존재
+              _paperBanner(), // ['서류']가 있으면 존재
+              _criteriaSection(), // ['조건']이 있으면 존재
+              _changedBanner(), // ['변경점']이 있으면 존재
+              _relativesSection(), // ['상대교']가 있으면 존재
+              _contactBanner(), // ['담당부서 정보']가 있으면 존재
             ],
           ),
         ),
@@ -113,7 +114,9 @@ class _NewInfoState extends State<NewInfo> {
     }
   }
 
-  Widget _buildScheduleSection(Map<String, dynamic> schedule) {
+  Widget _scheduleSection() {
+    Map<String, dynamic> schedule = universityData!['일정'];
+
     // Convert Firestore Timestamps to DateTime and keep keys
     List<MapEntry<String, DateTime>> dateEntries = schedule.entries.map((entry)
     => MapEntry(entry.key, (entry.value as Timestamp).toDate())).toList();
@@ -128,14 +131,14 @@ class _NewInfoState extends State<NewInfo> {
         children: [
           Text(
             widget.university,
-            style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Colors.black),
+            style: AppTextStyle.titleTextStyle,
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
             '현재 ${widget.university}의 남은 일정이 없습니다!',
-            style: TextStyle(fontSize: 18, color: Colors.black),
+            style: const TextStyle(fontSize: 18, color: Colors.black),
           ),
-          SizedBox(height: 30),
+          SizedBox(height: AppNumbers.infoInterSectionMargin),
         ],
       );
     }
@@ -176,30 +179,32 @@ class _NewInfoState extends State<NewInfo> {
       children: [
         Text(
           widget.university,
-          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Colors.black),
+          style: AppTextStyle.titleTextStyle,
         ),
-        SizedBox(height: 6),
+        const SizedBox(height: 6),
         FittedBox(
           child: RichText(
             text: TextSpan(
               children: [
                 TextSpan(
                   text: '$latestKey까지 ',
-                  style: TextStyle(color: Colors.black, fontSize: 17),
+                  style: AppTextStyle.subtitleTextStyle,
                 ),
                 TextSpan(
                   text: displayingLeftoverTime,
-                  style: TextStyle(color: Color(0xFFCC0000), fontSize: 17, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.red, fontSize: 15, fontWeight: FontWeight.w700,
+                  ),
                 ),
                 TextSpan(
                   text: "남았어요!",
-                  style: TextStyle(color: Colors.black, fontSize: 17),
+                  style: AppTextStyle.subtitleTextStyle,
                 ),
               ],
             ),
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         SizedBox(
           height: 120,
           child: ListView(
@@ -210,198 +215,291 @@ class _NewInfoState extends State<NewInfo> {
                 bool _isFirst = false;
                 if(entry.key == latestKey)
                   _isFirst = true;
-                return _buildScheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), '캘린더에 추가', _isFirst);
+                return _scheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), _isFirst);
               }),
             ],
           ),
         ),
-        SizedBox(height: 30),
+        SizedBox(height: AppNumbers.infoInterSectionMargin),
       ],
     );
   }
-  Widget _buildScheduleCard(String title, String date, String calendar, bool _isFirst) {
-
-    final Color _backgroundColor;
-    _isFirst == true ? _backgroundColor = AppColors.keyBackgroundColor : _backgroundColor = AppColors.backgroundColor;
+  Widget _scheduleCard(String title, String date, bool _isFirst) {
+    Color _backgroundColor = _isFirst ? AppColors.backgroundColor : AppColors.white;
 
     return Container(
-      margin: EdgeInsets.only(right: 10),
-      padding: EdgeInsets.all(10),
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: _backgroundColor,
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
-        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w600),
+            style: AppTextStyle.subtitleTextStyle,
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             date,
-            style: TextStyle(color: Colors.black, fontSize: 16),
+            style: AppTextStyle.contentTextStyle,
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           GestureDetector(
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
             },
-            child: Text(calendar, style: TextStyle(color: Colors.black, fontSize: 15)),
+            child: Text(
+              '캘린더에 추가',
+              style: AppTextStyle.mediumTextStyle,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCriteriaSection() {
-    Map<String, dynamic>? criteria = universityData!['기준'];
-
-    // 선발 기준, 제출 가능 어학성적 및 커트라인, 지원 조건 등
-    List<String> standards = (criteria != null) ? criteria.keys.toList() : [];
-
-    if(criteria == null)
-      return Container(); // criteria가 없는 경우 -> 그냥 CriteriaSection을 없앤다.
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            ...standards.map((standard) {
-              List<dynamic> standardContents = criteria[standard].values.toList();
-
-              //return Container(child: Text('123'));
-              return _buildCriteriaButton(standard, standardContents);
-            }),
-          ],
-        ),
-        SizedBox(height: 30),
-      ],
-    );
-  }
-  Widget _buildCriteriaButton(String standard, List<dynamic> standardContents) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
-        color: AppColors.backgroundColor,
-      ),
-      child: Center(
-        child: Text(
-          standard,
-          style: TextStyle(
-            color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaperBanner() {
+  Widget _paperBanner() {
     Map<String, dynamic>? paper = universityData!['서류'];
 
     // 아직 '서류' 필드가 준비되지 않은 대학교의 경우
     if(paper == null)
-      return SizedBox();
+      return const SizedBox();
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaperToSubmit(
+    return Container(
+      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => PaperToSubmit(
               university: widget.university,
               leftoverPapers: leftoverPapers,
               donePapers: donePapers,
               warnings: paper['주의사항'],
-            ),
-          ),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        margin: EdgeInsets.only(bottom: 30),
-        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-        decoration: BoxDecoration(
-          color: Color(0xFFD1E0EC),
-          borderRadius: BorderRadius.circular(15),
-        ),
+              icon: Icon(Icons.subject, color: Colors.black, size: 30),
+            )),
+          );
+        },
         child: Row(
           children: [
             (_isFieldExist == true)
-            ? Icon(Icons.warning, color: Color(0xFFDA3B3B), size: 30)
-            : Icon(Icons.subject, color: Color(0xFF000000), size: 30),
-            SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  (_isFieldExist == true) ? '아직 준비 하지 못한 서류 ${leftoverPapers.length}가지' : '${widget.university} 제출 서류',
-                  style: TextStyle(
-                    color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  (_isFieldExist == true) ? '다시 확인하기' : '1분 만에 확인하기',
-                  style: TextStyle(
-                    color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+                ? const Icon(Icons.warning, color: Color(0xFFDA3B3B), size: 30)
+                : const Icon(Icons.subject, color: Colors.black, size: 30),
+            const SizedBox(width: 10),
+            Text(
+              (_isFieldExist == true)
+                  ? '아직 준비 하지 못한 서류 ${leftoverPapers.length}가지\n다시 확인하기'
+                  : '${widget.university} 제출 서류\n1분 만에 확인하기',
+              style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold, height: 1.5),
             ),
+          ],
+        ),
+        style: AppButtonStyle.paperButtonStyle,
+      ),
+    );
+  }
+
+  Widget _criteriaSection() {
+    Map<String, dynamic>? criteria = universityData!['조건'];
+
+    if(criteria == null)
+      return const SizedBox();
+
+    // 선발기준, 주의사항, 지원서 작성방법, 지원조건 등 (해당은 건국대 기준)
+    List<String> _keys = criteria.keys.toList();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.secondBackgroundColor, width: 5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${widget.username}님을 위해 준비한 ${_keys.length}가지 꿀팁',
+            style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          ..._keys.map((key) {
+            List<dynamic> value = criteria[key];
+
+            return _criteriaBanner(key, value);
+          })
+        ],
+      ),
+    );
+  }
+  Widget _criteriaBanner(String key, List<dynamic> value) {
+    late Icon _criteriaIcon;
+    late String _title;
+
+    if(key == '선발기준') {
+      _criteriaIcon = const Icon(Icons.accessibility, color: Color(0xFFD2B19D), size: 30);
+      _title = '선발기준 알아보기';
+    }
+    if(key == '지원서 작성방법') {
+      _criteriaIcon = const Icon(Icons.newspaper, color: Color(0xFF565151), size: 30);
+      _title = '지원서 작성하는 방법';
+    }
+    if(key == '지원조건') {
+      _criteriaIcon = const Icon(Icons.account_box_rounded, color: Color(0xFF9BA0D7), size: 30);
+      _title = '지원조건 체크하기';
+    }
+    if(key == '주의사항') {
+      _criteriaIcon = const Icon(Icons.warning, color: Color(0xFFD73F3F), size: 30);
+      _title = '지원 시 주의사항은?';
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => StandardPage(
+          standardTitle: _title,
+          standardContent: value,
+          icon: _criteriaIcon,
+        )));
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        width: double.infinity,
+        child: Row(
+          children: [
+            _criteriaIcon,
+            const SizedBox(width: 15),
+            Text(
+              _title,
+              style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w500),
+            ),
+            const Spacer(),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRelativesSection(Map<String, dynamic>? relatives) {
-    List<String> areas = (relatives != null) ? relatives.keys.toList() : [];
+  Widget _changedBanner() {
+    List<dynamic>? changed = universityData!['변경점'];
 
-    if(relatives != null) {
-      return Column(
+    // 아직 '변경점' 필드가 준비되지 않은 대학교의 경우
+    if(changed == null)
+      return const SizedBox();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
+      ),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ChangedThings(
+              changed: changed,
+              icon: Image.asset('assets/images/exclamation_mark.png', color: AppColors.keyColor, width: 30, height: 30),
+            )),
+          );
+        },
+        child: Row(
+          children: [
+            Image.asset('assets/images/exclamation_mark.png', color: AppColors.keyColor, width: 30, height: 30),
+            const SizedBox(width: 10),
+            Text(
+              '${widget.university}에서\n올해 처음 바뀐 기준 ${changed.length}가지',
+              style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold, height: 1.5),
+            ),
+            Spacer(),
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+              decoration: BoxDecoration(
+                color: AppColors.secondBackgroundColor.withOpacity(0.75),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                '확인하기',
+                style: const TextStyle(color: Colors.black, fontSize: 15),
+              ),
+            ),
+          ],
+        ),
+        style: AppButtonStyle.changedButtonStyle,
+      ),
+    );
+  }
+
+  Widget _relativesSection() {
+    Map<String, dynamic>? relatives = universityData!['상대교'];
+
+    if(relatives == null)
+      return const SizedBox();
+
+    List<String> areas = relatives.keys.toList();
+
+    return Container(
+      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
+      padding: EdgeInsets.all(10),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '지원가능 대학 목록',
-                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700, color: Colors.black),
+          Container(
+            height: 30,
+            child: ElevatedButton(
+              onPressed: () {
+                // 지원 가능 대학 목록 전체 보기
+                Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
+                  relatives: relatives,
+                  areas: areas,
+                )));
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '상대교 국제처 링크 모음',
+                    style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondBackgroundColor.withOpacity(0.75),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '전체보기',
+                        style: TextStyle(color: Colors.black, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              GestureDetector(
-                onTap: () {
-                  // 지원 가능 대학 목록 전체 보기
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
-                    relatives: relatives,
-                    areas: areas,
-                  )));
-                },
-                child: Row(
-                  children: [
-                    Text("전체 보기", style: TextStyle(fontSize: 15, color: Colors.black)),
-                    Icon(Icons.keyboard_arrow_right_sharp, size: 20, color: Colors.black),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 6),
-          FittedBox(
-            child: Text(
-              '권역 별로 지원이 가능한 대학교 목록을 확인해보세요!',
-              style: TextStyle(color: Colors.black, fontSize: 18),
+              style: AppButtonStyle.buttonStyle,
             ),
           ),
-          SizedBox(height: 10),
-          SizedBox(
-            height: 222,
+          const SizedBox(height: 10),
+          Container(
+            height: 110,
             child: ListView(
               scrollDirection: Axis.horizontal,
               shrinkWrap: true,
@@ -410,129 +508,166 @@ class _NewInfoState extends State<NewInfo> {
                   List universitiesInArea = relatives[area].keys.toList();
 
                   // previewSplit개 만큼만 universitiesInArea에서 떼 올 예정
-                  int previewSplit = (universitiesInArea.length >= 5) ? 5 : universitiesInArea.length;
+                  int previewSplit = (universitiesInArea.length >= 3) ? 3 : universitiesInArea.length;
 
                   // 떼 온 값을 previewUnivList에 넣는다
                   List previewUnivList = universitiesInArea.sublist(0, previewSplit);
 
-                  return _buildRelativesCard(area, previewUnivList, relatives);
+                  return _relativesCard(area, previewUnivList, relatives);
                 }),
               ],
             ),
           ),
-          SizedBox(height: 30),
         ],
-      );
-    } else {
-      return Container(); // relatives가 없는 경우 -> 그냥 RelativesSection을 없앤다.
-    }
-  }
-  Widget _buildRelativesCard(String title, List<dynamic> universities, Map<String, dynamic> relatives) {
-    // relatives와 areas : 자세히 보기를 위해서 사용
-    List<String> areas = relatives.keys.toList();
-
-    return Container(
-      width: 200,
-      margin: EdgeInsets.only(right: 10),
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
-        color: Colors.white,
       ),
+    );
+  }
+  Widget _relativesCard(String title, List<dynamic> universities, Map<String, dynamic> relatives) {
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(right: 10),
+      color: AppColors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          RichText(
-            text: TextSpan(
+          Text(
+            '$title 대학',
+            style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          ...universities.map((university) =>
+            Column(
               children: [
-                TextSpan(
-                  text: title,
-                  style: TextStyle(color: Color(0xFFCC0000), fontSize: 18, fontWeight: FontWeight.bold),
+                GestureDetector(
+                  onTap: () {
+
+                  },
+                  child: Text(
+                    university,
+                    style: const TextStyle(color: Colors.black, fontSize: 15, overflow: TextOverflow.ellipsis),
+                  ),
                 ),
-                TextSpan(
-                  text: ' 대학',
-                  style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                const SizedBox(height: 5),
               ],
             ),
-          ),
-          SizedBox(height: 8),
-          ...universities.map((university) =>
-              Column(
-                children: [
-                  Text(university, style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 15,
-                    overflow: TextOverflow.ellipsis,
-                  )),
-                  SizedBox(height: 5),
-                ],
-              ),
-          ),
-          SizedBox(height: 15),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
-                relatives: relatives,
-                areas: areas,
-              )));
-            },
-            child: Text("전체 보기", style: TextStyle(fontSize: 15)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCriteriaCard(String university, String standard, List<dynamic> standdardContents, String etc) {
+  Widget _contactBanner() {
+    Map<String, dynamic>? contact = universityData!['담당부서 정보'];
+
+    if(contact == null)
+      return const SizedBox();
+
+    List<String> desiredOrderOfContactType = ['전화번호', '이메일', '위치', '우편번호'];
+
+    // Create a nnw map with the desired order
+    Map<String, dynamic> orderedContact = {};
+    for(String key in desiredOrderOfContactType) {
+      if(contact.containsKey(key))
+        orderedContact[key] = contact[key];
+    }
+
+    // 정보 종류
+    List<String> contactType = orderedContact.keys.toList();
+    // 정보 타입
+    List<dynamic> contactContent = orderedContact.values.toList();
+
     return Container(
-      margin: EdgeInsets.only(bottom: 10),
+      width: double.infinity,
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
-        color: AppColors.backgroundColor,
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          RichText(
-            text: TextSpan(
-              text: university,
-              style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-              children: [
-                TextSpan(
-                  text: standard,
-                  style: TextStyle(color: Color(0xFFCC0000), fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            '담당부서 정보',
+            style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 5),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: contactContent.length,
+            itemBuilder: (context, index) {
+              return Container(
+                height: 30,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await _contactOnTap(contactType[index], contactContent[index]);
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _contactIcon(contactType[index]),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '${contactContent[index]}',
+                            style: TextStyle(
+                              color: (contactType[index] == '전화번호') ? Colors.green : ((contactType[index] == '이메일') ? Colors.grey : Colors.black),
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  style: AppButtonStyle.buttonStyle,
                 ),
-              ],
-            ),
+              );
+            },
+            separatorBuilder: (context, index) {
+              return const SizedBox(height: 5);
+            },
           ),
-          SizedBox(height: 8),
-          ...standdardContents.map((standardContent) =>
-              Column(
-                children: [
-                  Text(standardContent, style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 5),
-                ],
-              ),
-          ),
-          if(etc != "빈칸")...[
-            SizedBox(height: 15),
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
-              },
-              child: Text(
-                etc,
-                style: TextStyle(fontSize: 15),
-              ),
-            ),
-          ]
         ],
       ),
     );
+  }
+  Icon _contactIcon(String contactType) {
+    // contactType[index]를 icon으로 바꾸는 곳
+
+    if(contactType == '전화번호')
+      return const Icon(Icons.call, color: Colors.green, size: 20);
+    if(contactType == '이메일')
+      return const Icon(Icons.alternate_email, color: Colors.grey, size: 20);
+    if(contactType == '위치')
+      return const Icon(Icons.location_on, color: Colors.blue, size: 20);
+    if(contactType == '우편번호')
+      return const Icon(Icons.mail, color: Colors.orange, size: 20);
+
+    // 위 경우가 아닐 때, 기본적으로 리턴할 아이콘
+    return const Icon(Icons.circle_outlined, color: Colors.black, size: 20);
+  }
+  Future<void> _contactOnTap(String contactType, String contactContent) async {
+    // contactType[index]에 따라, 버튼을 눌렀을 때 액션이 보여지게 하는 곳
+
+    if(contactType == '전화번호') {
+      Uri url = Uri(
+        scheme: 'tel',
+        path: contactContent,
+      );
+      await canLaunchUrl(url) ? launchUrl(url) : print('Telephone app launch failed: $url');
+    }
+    if(contactType == '이메일') {
+      Uri url = Uri(
+        scheme: 'mailto',
+        path: contactContent,
+      );
+      await canLaunchUrl(url) ? launchUrl(url) : print('Mail app launch failed: $url');
+    }
   }
 }

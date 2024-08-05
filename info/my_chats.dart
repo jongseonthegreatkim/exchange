@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../colors.dart';
+import '../statics.dart';
 import '../community/chat.dart';
 
 class MyChats extends StatefulWidget {
@@ -116,9 +116,9 @@ class _MyChatsState extends State<MyChats> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: AppColors.white,
         scrolledUnderElevation: 0,
         title: const Text('채팅'),
         titleSpacing: 0,
@@ -132,7 +132,7 @@ class _MyChatsState extends State<MyChats> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor),
+                    CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.white),
                     SizedBox(height: 30),
                     Text(
                       '여기가 로딩이 좀 느려요.. 조금만 기다려 주세요',

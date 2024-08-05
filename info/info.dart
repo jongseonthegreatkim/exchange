@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For DateTime
 import 'dart:async'; // For Timer
 import 'full_relatives.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class Info extends StatefulWidget {
   const Info({super.key, required this.university});
@@ -59,13 +59,13 @@ class _InfoState extends State<Info> {
       return Center(
         child: CircularProgressIndicator(
           color: AppColors.keyColor,
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.white,
         ),
       );
     } else {
       return SingleChildScrollView(
         child: Container(
-          color: AppColors.backgroundColor,
+          color: AppColors.white,
           margin: EdgeInsets.all(15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +189,7 @@ class _InfoState extends State<Info> {
   Widget _buildScheduleCard(String title, String date, String calendar, bool _isFirst) {
 
     final Color _backgroundColor;
-    _isFirst == true ? _backgroundColor = AppColors.keyBackgroundColor : _backgroundColor = AppColors.backgroundColor;
+    _isFirst == true ? _backgroundColor = AppColors.backgroundColor : _backgroundColor = AppColors.white;
 
     return Container(
       margin: EdgeInsets.only(right: 10),
@@ -414,7 +414,7 @@ class _InfoState extends State<Info> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
-        color: AppColors.backgroundColor,
+        color: AppColors.white,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

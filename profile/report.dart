@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class Report extends StatefulWidget {
   const Report({super.key});
@@ -20,9 +20,9 @@ class _ReportState extends State<Report> {
     TextEditingController _contentController = TextEditingController();
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: AppColors.white,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
         title: Text('신고하기'),
         titleSpacing: 0, // To make title to stay at the middle
@@ -34,7 +34,7 @@ class _ReportState extends State<Report> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: AppColors.backgroundColor,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(color: AppColors.keyColor, width: 1),
               ),

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
 import 'get_info.dart';
 import '../main.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -14,47 +15,75 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  // 구글 로그인 함수
+  Future<User?> signInWithGoogle() async {
+    print('signInWithGoogle function is executed');
+
+    try {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      print('GoogleSignIn progress in done.');
+
+      // Check if the user canceled the sign-in
+      if(googleUser == null) {
+        print('User canceled the Google sign-in');
+        return null;
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication? googleAuth = await googleUser.authentication;
+      print('authentication Completed.');
+
+      // Check if the authentication object is valid
+      if(googleAuth == null || (googleAuth.accessToken == null && googleAuth.idToken == null)) {
+        print('GoogleAuth is invalid or missing tokens.');
+        return null;
+      }
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Once signed in, return the userCredential.user
+      return userCredential.user;
+    } catch (e) {
+      // Handle the error appropriately
+      print('Error during Google Sign-In: $e');
+      return null;
+    }
+  }
+
+  // 애플 로그인 함수
+  Future<User?> signInWithApple() async {
+    try {
+      final appleProvider = AppleAuthProvider();
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithProvider(appleProvider);
+      return userCredential.user;
+    } catch (e) {
+      if(e is FirebaseAuthException && e.code == 'canceled') {
+        print('User canceled the Apple sign-in.');
+        return null;
+      } else {
+        print('Error during Apple Sign-In: $e');
+        return null;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             // 앱 제목
-            Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(flex: 2, child: SizedBox()),
-                    Expanded(flex: 3, child: FittedBox(fit: BoxFit.fitWidth, child: Text(
-                      '교환학생 준비는',
-                    ))),
-                    Expanded(flex: 2, child: SizedBox()),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(flex: 2, child: SizedBox()),
-                    Expanded(flex: 3, child: FittedBox(
-                      fit: BoxFit.fitWidth,
-                      child: Row(
-                        children: [
-                          Image.asset('assets/images/new_logo.png', width: 20, height: 20),
-                          SizedBox(width: 5),
-                          Text(
-                            '대학교환',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.keyColor),
-                          ),
-                        ],
-                      ),
-                    )),
-                    Expanded(flex: 2, child: SizedBox()),
-                  ],
-                ),
-              ],
-            ),
+            Image.asset('assets/images/logo_login_screen.png', width: 200),
             Column(
               children: [
                 // 구글 로그인 버튼
@@ -105,7 +134,7 @@ class _LoginState extends State<Login> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Image.asset('assets/images/google_logo.png', width: 20, height: 20),
+              Image.asset('assets/images/login_google.png', width: 20, height: 20),
               Text("Google로 로그인"),
             ],
           ),
@@ -119,7 +148,7 @@ class _LoginState extends State<Login> {
             return Colors.black.withOpacity(0.8);
           }),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return AppColors.backgroundColor;
+            return AppColors.white;
           }),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             return Colors.grey.withOpacity(0.1);
@@ -127,47 +156,6 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
-  }
-
-  Future<User?> signInWithGoogle() async {
-    print('signInWithGoogle function is executed');
-
-    try {
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      print('GoogleSignIn progress in done.');
-
-      // Check if the user canceled the sign-in
-      if(googleUser == null) {
-        print('User canceled the Google sign-in');
-        return null;
-      }
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication? googleAuth = await googleUser.authentication;
-      print('authentication Completed.');
-
-      // Check if the authentication object is valid
-      if(googleAuth == null || (googleAuth.accessToken == null && googleAuth.idToken == null)) {
-        print('GoogleAuth is invalid or missing tokens.');
-        return null;
-      }
-
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-
-      // Once signed in, return the userCredential.user
-      return userCredential.user;
-    } catch (e) {
-      // Handle the error appropriately
-      print('Error during Google Sign-In: $e');
-      return null;
-    }
   }
 
   Widget appleLogin(BuildContext context) {
@@ -205,8 +193,7 @@ class _LoginState extends State<Login> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Icon(Icons.apple, size: 20),
-              //Image.asset('assets/images/apple_logo.png', width: 20, height: 20),
+              Image.asset('assets/images/login_apple.png', width: 20, height: 20),
               Text("Apple로 로그인"),
             ],
           ),
@@ -220,7 +207,7 @@ class _LoginState extends State<Login> {
             return Colors.black.withOpacity(0.8);
           }),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return AppColors.backgroundColor;
+            return AppColors.white;
           }),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             return Colors.grey.withOpacity(0.1);
@@ -228,21 +215,5 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
-  }
-
-  Future<User?> signInWithApple() async {
-    try {
-      final appleProvider = AppleAuthProvider();
-      final UserCredential userCredential = await FirebaseAuth.instance.signInWithProvider(appleProvider);
-      return userCredential.user;
-    } catch (e) {
-      if(e is FirebaseAuthException && e.code == 'canceled') {
-        print('User canceled the Apple sign-in.');
-        return null;
-      } else {
-        print('Error during Apple Sign-In: $e');
-        return null;
-      }
-    }
   }
 }

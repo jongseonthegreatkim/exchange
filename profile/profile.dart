@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:exchange/login/login.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
+import 'package:exchange/login/login.dart';
+import '../login/nation_select.dart';
 import 'user_content.dart';
 import 'suggestion.dart';
 import 'report.dart';
 import 'developer.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class Profile extends StatefulWidget {
   final String username;
@@ -19,119 +23,233 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  // 선택한 nations를 저장할 변수.
+  List<String> selectedNations = [];
+
+  // uid 문서의 nations 필드의 정보를 가져오는 함수
+  Future<void> fetchNations() async {
+    // 현재 사용자의 uid를 받아옴
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+
+    // uid 존재 여부를 위해서 try-catch 문을 사용
+    try{
+      // uid 문서에 접근
+      DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+
+      // uid 문서를 Map<String, dynamic>으로 처리
+      Map<String, dynamic>? data = userSnapshot.data() as Map<String, dynamic>?;
+      // Map<String, dynamic>으로 처리된 uid 문서의 nations 필드를 List<dynamic>으로 처리해 nations에 넣는다.
+      List<dynamic>? nations = data?['nations'] as List<dynamic>?;
+      // nations가 존재하는 경우에만, selectedNations에 요소를 String으로 바꿔 전달한다.
+      if(nations != null) {
+        nations.forEach((element) {
+          selectedNations.add(element.toString());
+        });
+      }
+
+    } catch (e) {
+      print('Error fetching nations field: $e');
+    }
+  }
+
+
+  // fetchNations에 해당하는 Future
+  late Future<void> nationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    nationsFuture = fetchNations();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        padding: EdgeInsets.all(16),
+    // nationsFuture가 작동한 뒤에 UI를 그리자.
+    return FutureBuilder(
+      future: nationsFuture,
+      builder: (context, snapshot) {
+        if(snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: AppLoading.CPI,
+          );
+        } else {
+          return SingleChildScrollView(
+            child: Container(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _profileCard(), // 프로필 섹션
+                  _nationsCard(), // 희망대학 섹션
+                  _settingSection(), // 설정 섹션
+                ],
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+  Widget _profileCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: AppNumbers.profileInterSectionMargin),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey, width: 0.5),
+        color: AppColors.white,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.person, size: 80, color: AppColors.keyColor),
+          SizedBox(width: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.username, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+              Text(widget.university, style: TextStyle(fontSize: 15)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _nationsCard() {
+    // nations 필드가 존재하지 않거나, 비었을 때
+    /// 희망국가 선택하기 버튼 만들자. -> nation_select로 이동하는데, selectedNations 넘겨주지 않는다.
+    if(selectedNations.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: Colors.grey, width: 1)),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProfileSection(), // 프로필 섹션
-            SizedBox(height: 20),
-            _buildSettingSection(), // 설정 섹션
+            Text('교환 희망국가', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: FittedBox(
+                      child: Text('아직 희망국가 선택을 하지 않았어요', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                        NationSelect(
+                          username: widget.username,
+                          university: widget.university,
+                          from: 'profile',
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondBackgroundColor.withOpacity(0.75),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '희망국가 선택하기',
+                        style: TextStyle(color: Colors.black, fontSize: 15),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Widget _buildProfileSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        //Text("내 프로필", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        //SizedBox(height: 10),
-        _buildProfileCard(widget.username, widget.university),
-        /*
-        SizedBox(height: 25),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("프로필 완성하기", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text("3/6", style: TextStyle(fontSize: 17, color: Colors.black54)),
-          ],
-        ),
-        SizedBox(height: 10),
-        Stack(
-          children: [
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: 10,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.grey,
-              ),
-            ),
-            Container(
-              width: MediaQuery.of(context).size.width / 2,
-              height: 10,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: conceptColor,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 10),
-        SizedBox(
-          height: 76,
-          child: ListView(
-            shrinkWrap: true,
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildProfileEditCard("희망 국가 등록", "교환학생을 가고 싶은 나라를 등록해주세요"),
-              SizedBox(width: 10),
-              _buildProfileEditCard("희망 학교 등록", "최대 3개까지 고를 수 있어요"),
-            ],
-          ),
-        ),
-        */
-      ],
-    );
-  }
-  Widget _buildProfileCard(String name, String university) {
+    // nations 필드가 존재하고, 비지 않았을 때
+
+    // 보여질 희망국가 스트링
+    String printingSelectedNations = '';
+
+    if(selectedNations.length <= 3) {
+      selectedNations.forEach((nation) {
+        printingSelectedNations += nation + ', ';
+      });
+
+      // 마지막 컴마 없애기
+      if(printingSelectedNations.isNotEmpty)
+        printingSelectedNations = printingSelectedNations.substring(0, printingSelectedNations.length -2);
+
+    } else {
+      // 3개로만 자르기
+      List<String> shortedSelectedNations = selectedNations.sublist(0, 3);
+
+      shortedSelectedNations.forEach((nation) {
+        printingSelectedNations += nation + ', ';
+      });
+
+      // 마지막 컴마 없애기 + '외 몇 곳' 추가하기
+      if(printingSelectedNations.isNotEmpty) {
+        printingSelectedNations = printingSelectedNations.substring(0, printingSelectedNations.length -2);
+        printingSelectedNations += ' 외 ${selectedNations.length - 3}곳';
+      }
+    }
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey, width: 0.5),
-        color: AppColors.backgroundColor,
+        border: Border(top: BorderSide(color: Colors.grey, width: 1)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.person, size: 100, color: Colors.red),
-          SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Text('교환 희망국가', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(name, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              Text(university, style: TextStyle(fontSize: 15)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-  Widget _buildProfileEditCard(String title, String content) {
-    return Container(
-      padding: EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey, width: 0.5),
-        color: AppColors.backgroundColor,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              Text(content, style: TextStyle(fontSize: 15)),
+              Flexible(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Text(printingSelectedNations, style: TextStyle(fontSize: 16)),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                      NationSelect(
+                        username: widget.username,
+                        university: widget.university,
+                        selectedNations: selectedNations,
+                        from: 'profile',
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondBackgroundColor.withOpacity(0.75),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '희망국가 변경하기',
+                      style: TextStyle(color: Colors.black, fontSize: 15),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -139,21 +257,17 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildSettingSection() {
+  Widget _settingSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSettingCard("내 활동", ["내가 쓴 글", '내가 댓글 쓴 글']),
-        SizedBox(height: 10),
-        _buildSettingCard("계정 설정", ['로그아웃', '계정 삭제']),
-        SizedBox(height: 10),
-        _buildSettingCard("Contact Us", ['건의하기', '신고하기', '개발진']),
-        SizedBox(height: 10),
-        //_buildSettingCard("앱 설정", ["다크모드", "알림 설정", "앱 잠금"]),
+        _settingCard("내 활동", ["내가 쓴 글", '내가 댓글 쓴 글']),
+        _settingCard("계정 설정", ['로그아웃', '계정 삭제']),
+        _settingCard("Contact Us", ['건의하기', '신고하기', '개발진']),
       ],
     );
   }
-  Widget _buildSettingCard(String title, List<String> contents) {
+  Widget _settingCard(String title, List<String> contents) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 10),
@@ -202,7 +316,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.white,
           title: Text('로그아웃'),
           content: Text('정말 로그아웃 할 거에요..?'),
           actions: [
@@ -243,7 +357,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.white,
           title: Text('계정 삭제'),
           content: Text(
             '계정을 삭제 하시면,\n작성하신 게시글 및 댓글에\n더 이상 접근 및 수정이 불가능합니다.'

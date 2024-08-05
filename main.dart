@@ -6,10 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:timezone/data/latest.dart';
 
-// Global State Management
-import 'package:provider/provider.dart';
-import '../myProvider.dart';
-
 // Firebase Remote Configuration related packages
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -22,7 +18,7 @@ import 'info/new_info.dart'; // 건국대학교 한정!
 import 'info/my_chats.dart';
 import 'community/community.dart';
 import 'profile/profile.dart';
-import 'colors.dart';
+import 'statics.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,14 +31,7 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   initializeTimeZones();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => PaperStandard()),
-      ],
-      child: ExchangeStudentApp(),
-    ),
-  );
+  runApp(ExchangeStudentApp());
 }
 
 Future<void> initializeRemoteConfig() async {
@@ -102,7 +91,7 @@ class ExchangeStudentApp extends StatelessWidget {
               body: Center(
                 child: CircularProgressIndicator(
                   color: AppColors.keyColor,
-                  backgroundColor: AppColors.backgroundColor,
+                  backgroundColor: AppColors.white,
                 ),
               ),
             );
@@ -116,7 +105,7 @@ class ExchangeStudentApp extends StatelessWidget {
                     body: Center(
                       child: CircularProgressIndicator(
                         color: AppColors.keyColor,
-                        backgroundColor: AppColors.backgroundColor,
+                        backgroundColor: AppColors.white,
                       ),
                     ),
                   );
@@ -167,9 +156,11 @@ class _HomeState extends State<Home> {
   void initState() {
     _currentIndex = widget.bottomIndex;
 
-    checkForUpdate();
+    checkForUpdate(); // Firebase Remote Config
 
-    initializeFirebaseMessaging();
+    initializeFirebaseMessaging(); // Firebae Cloud Messaging
+
+    updatedUnivFetch(); // 1.7.0 and below interface difference
 
     super.initState();
   }
@@ -193,7 +184,6 @@ class _HomeState extends State<Home> {
       showUpdateDialog();
     }
   }
-
   bool isVersionLowerThan(String currentVersion, String requiredVersion) {
     List<String> currentParts = currentVersion.split('.');
     List<String> requiredParts = requiredVersion.split('.');
@@ -215,14 +205,13 @@ class _HomeState extends State<Home> {
   }
 
   String exchangeAppStoreURL = 'https://apple.co/4cukF8B';
-
   void showUpdateDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.white,
           title: Text('업데이트 해줘!'),
           content: Text(
             '새 버전 나왔는디.. 업데이트 한 번만 해 주슈\n'
@@ -302,7 +291,6 @@ class _HomeState extends State<Home> {
       saveTokenToFirestore(token);
     });
   }
-
   void saveTokenToFirestore(String? token) async {
     if (token != null) {
       String? uid = FirebaseAuth.instance.currentUser?.uid;
@@ -316,21 +304,37 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-
-    Text _appBarTitle = Text(
-      '대학교환',
-      style: TextStyle(
-        fontSize: 23,
-        fontWeight: FontWeight.w700,
-      ),
+    return Scaffold(
+      backgroundColor: AppColors.white,
+      appBar: _appBar(context, _currentIndex),
+      body: _body(context),
+      bottomNavigationBar: _bottomNavigationBar(context),
     );
-    late var _appBarLeading;
+  }
+
+  AppBar _appBar(BuildContext context, int _currentIndex) {
+    Widget _appBarTitle = SizedBox();
+    var _appBarLeading = null;
     List<Widget> _appBarActions = [];
 
     if(_currentIndex == 0) {
+      /*
       _appBarLeading = Padding(
         padding: EdgeInsets.only(left: 15),
-        child: Image.asset('assets/images/new_logo.png', width: 30, height: 30),
+        child: Image.asset('assets/images/vector_five.png', width: 30, height: 30),
+      );
+      */
+      _appBarLeading = null;
+      _appBarTitle = Row(
+        children: [
+          Text('대학', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            //child: Image.asset('assets/images/vector_five.png', width: 23, height: 23),
+            child: Image.asset('assets/images/logo_info_screen.png', width: 25, height: 25),
+          ),
+          Text('교환', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
+        ],
       );
       _appBarActions = [
         IconButton(
@@ -353,13 +357,13 @@ class _HomeState extends State<Home> {
       ];
     }
     if(_currentIndex == 1) {
+      _appBarLeading = (_isSearching == true) ? null : Icon(Icons.list_alt, size: 30, color: Colors.black);
       _appBarTitle = Text(
         '커뮤니티',
         style: TextStyle(
           fontWeight: FontWeight.w700,
         ),
       );
-      _appBarLeading = (_isSearching == true) ? null : Icon(Icons.list_alt, size: 30, color: Colors.black);
       _appBarActions = (_isSearching == true) ? [
         Expanded(
           child: Padding(
@@ -399,76 +403,113 @@ class _HomeState extends State<Home> {
         Padding(
           padding: EdgeInsets.only(right: 15),
           child: IconButton(
-            onPressed: () {
-              setState(() {
-                _isSearching = true;
-              });
-            },
-            icon: Icon(Icons.search, size: 30, color: Colors.black)),
+              onPressed: () {
+                setState(() {
+                  _isSearching = true;
+                });
+              },
+              icon: Icon(Icons.search, size: 30, color: Colors.black)),
         ),
       ];
     }
     if(_currentIndex == 2) {
+      _appBarLeading = Icon(Icons.person, size: 30, color: Colors.black);
       _appBarTitle = Text(
         '프로필',
         style: TextStyle(
           fontWeight: FontWeight.w700,
         ),
       );
-      _appBarLeading = Icon(Icons.person, size: 30, color: Colors.black);
     };
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
-        leading: _appBarLeading,
-        title: _appBarTitle,
-        titleSpacing: _currentIndex == 0 ? 11 : 0,
-        centerTitle: false,
-        actions: _appBarActions
-      ),
-      body: _body(context, _currentIndex),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Colors.grey, width: 0.5),
-          ),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: AppColors.backgroundColor,
-          items: [
-            BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.school, size: 30)), label: '메인'),
-            BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.list_alt, size: 30)), label: '커뮤니티'),
-            BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.person, size: 30)), label: '개인정보'),
-          ],
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-              // 다른데로 넘어갈 땐 항상 _isSearching 끄기
-              _isSearching = false;
-            });
-          },
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey,
-        ),
-      ),
+    return AppBar(
+      backgroundColor: AppColors.white,
+      scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
+      automaticallyImplyLeading: false,
+      leading: _appBarLeading,
+      title: _appBarTitle,
+      titleSpacing: _currentIndex == 0 ? 15 : 0,
+      centerTitle: false,
+      actions: _appBarActions
     );
   }
 
-  Widget _body(BuildContext context, int index) {
-    if (index == 0) {
+  // Firestore에서 업데이트 된 대학교 목록 (updated_univ) 가져오는 함수
+  Future<List<String>> updatedUnivFetch() async {
+    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+        .collection('universities')
+        .doc('updated_univ')
+        .get();
+
+    Map<String, dynamic> updatedUnivData = documentSnapshot.data() as Map<String, dynamic>;
+
+    return updatedUnivData.values.map((value) => value.toString()).toList();
+  }
+
+  Widget _body(BuildContext context) {
+    if (_currentIndex == 0) {
+      return FutureBuilder(
+        future: updatedUnivFetch(),
+        builder: (context, snapshot) {
+          if(snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: AppColors.keyColor,
+                backgroundColor: AppColors.white,
+              ),
+            );
+          } else {
+            // 업데이트 된 대학교 목록
+            List<String> updatedUniversityList = snapshot.data as List<String>;
+
+            // 그 목록에 유저의 대학이 있으면 NewInfo로 보내고 없으면 Info로 보냄
+            if(updatedUniversityList.contains(widget.university)) {
+              return NewInfo(username: widget.username, university: widget.university);
+            } else {
+              return Info(university: widget.university);
+            }
+          }
+        },
+      );
+
+
       if(widget.university == '건국대학교') {
-        return NewInfo(university: widget.university);
+        return NewInfo(username: widget.username, university: widget.university);
       } else {
         return Info(university: widget.university);
       }
-    } else if (index == 1) {
+    } else if (_currentIndex == 1) {
       return Community(username: widget.username, university: widget.university, searchField: _searchField);
     } else {
       return Profile(username: widget.username, university: widget.university);
     }
+  }
+
+  Widget _bottomNavigationBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.grey, width: 0.5),
+        ),
+      ),
+      child: BottomNavigationBar(
+        backgroundColor: AppColors.white,
+        items: [
+          BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.school, size: 30)), label: '메인'),
+          BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.list_alt, size: 30)), label: '커뮤니티'),
+          BottomNavigationBarItem(icon: SizedBox(height: 30, child: Icon(Icons.person, size: 30)), label: '프로필'),
+        ],
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+            // 다른데로 넘어갈 땐 항상 _isSearching 끄기
+            _isSearching = false;
+          });
+        },
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.grey,
+      ),
+    );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'new_post.dart';
 import 'post.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class Community extends StatefulWidget {
   // 강제가 아닌 경우에는 required 안 넣는 구나.
@@ -240,13 +240,13 @@ class _CommunityState extends State<Community> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       body: _isFetching && _posts.isEmpty
-      ? Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor))
+      ? Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.white))
       : RefreshIndicator(
         onRefresh: _refreshPosts,
         color: AppColors.keyColor, // 리프레시 하면 상단에 뜨는 CircularProgressIndicator의 색상.
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: AppColors.white,
         child: NotificationListener<ScrollNotification>(
           onNotification: (scrollNotification) {
             final maxScroll = scrollNotification.metrics.maxScrollExtent;
@@ -280,10 +280,10 @@ class _CommunityState extends State<Community> {
           // Navigate to the post submission screen
           Navigator.push(context, MaterialPageRoute(builder: (context) => PostSubmissionScreen(onPostCreated: _refreshPosts)));
         },
-        child: Text('글 쓰기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        child: const Text('글 쓰기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
         style: ButtonStyle(
           padding: WidgetStateProperty.resolveWith((states) {
-            return EdgeInsets.symmetric(horizontal: 30);
+            return const EdgeInsets.symmetric(horizontal: 30);
           }),
           // foregroundColor = TextStyle(color), overlayColor = color when overlayed
           foregroundColor: WidgetStateProperty.resolveWith((states) {
@@ -337,16 +337,16 @@ class _CommunityState extends State<Community> {
         ));
       },
       child: Container(
-        margin: EdgeInsets.fromLTRB(10, 15, 10, 0),
-        padding: EdgeInsets.fromLTRB(10, 15, 10, 0),
-        decoration: BoxDecoration(border: Border(top: BorderSide(width: 0.5, color: Colors.grey))),
+        margin: const EdgeInsets.fromLTRB(10, 15, 10, 0),
+        padding: const EdgeInsets.fromLTRB(10, 15, 10, 0),
+        decoration: const BoxDecoration(border: Border(top: BorderSide(width: 0.5, color: Colors.grey))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 제목 & 내용
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 overflow: TextOverflow.ellipsis,
@@ -354,7 +354,7 @@ class _CommunityState extends State<Community> {
             ),
             Text(
               content,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 color: Colors.black54,
                 fontWeight: FontWeight.w600,
@@ -362,30 +362,30 @@ class _CommunityState extends State<Community> {
               ),
               maxLines: 2,
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             // 익명 & 시간
             Row(
               children: [
                 Text(_formatTimestamp(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
                 Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
                   width: 0.5,
                   height: 10,
                   color: Colors.black38,
                 ),
-                Text('익명', style: TextStyle(fontSize: 14, color: Colors.black38, overflow: TextOverflow.ellipsis)),
+                const Text('익명', style: TextStyle(fontSize: 14, color: Colors.black38, overflow: TextOverflow.ellipsis)),
               ],
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             // 좋아요 & 댓글
             Row(
               children: [
-                Icon(Icons.thumb_up, size: 14, color: Color(0xFFF92015)),
-                SizedBox(width: 5),
+                const Icon(Icons.thumb_up, size: 14, color: Color(0xFFF92015)),
+                const SizedBox(width: 5),
                 Text('$likesCount', style: TextStyle(fontSize: 14, color: Color(0xFFF92015))),
-                SizedBox(width: 10),
-                Icon(Icons.comment, size: 14, color: Color(0xFF07BCBC)),
-                SizedBox(width: 5),
+                const SizedBox(width: 10),
+                const Icon(Icons.comment, size: 14, color: Color(0xFF07BCBC)),
+                const SizedBox(width: 5),
                 Text('$reactionsCount', style: TextStyle(fontSize: 14, color: Color(0xFF07BCBC))),
               ],
             ),

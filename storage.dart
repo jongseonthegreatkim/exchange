@@ -128,6 +128,73 @@ TextButton(
 ),
 */
 
-Color backgroundColor = Colors.white;
-Color conceptColor = Color(0xFF73A9DA);
-Color conceptBackgroundColor = Color(0xFFF5DADA);
+/// profile.dart -> _buildProfileEditCard
+/*
+        SizedBox(height: 25),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("프로필 완성하기", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text("3/6", style: TextStyle(fontSize: 17, color: Colors.black54)),
+          ],
+        ),
+        SizedBox(height: 10),
+        Stack(
+          children: [
+            Container(
+              width: MediaQuery.of(context).size.width,
+              height: 10,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.grey,
+              ),
+            ),
+            Container(
+              width: MediaQuery.of(context).size.width / 2,
+              height: 10,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: AppColors.keyColor,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
+        SizedBox(
+          height: 76,
+          child: ListView(
+            shrinkWrap: true,
+            scrollDirection: Axis.horizontal,
+            children: [
+              _buildProfileEditCard("희망 국가 등록", "교환학생을 가고 싶은 나라를 등록해주세요"),
+              SizedBox(width: 10),
+              _buildProfileEditCard("희망 학교 등록", "최대 3개까지 고를 수 있어요"),
+            ],
+          ),
+        ),
+        */
+/*
+Widget _buildProfileEditCard(String title, String content) {
+    return Container(
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey, width: 0.5),
+        color: AppColors.white,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text(content, style: TextStyle(fontSize: 15)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+ */

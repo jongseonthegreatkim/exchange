@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../main.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class PaperToSubmit extends StatefulWidget {
   const PaperToSubmit({super.key,
@@ -11,12 +11,14 @@ class PaperToSubmit extends StatefulWidget {
     required this.leftoverPapers,
     required this.donePapers,
     required this.warnings,
+    required this.icon,
   });
 
   final String university;
   final List<dynamic> leftoverPapers;
   final List<dynamic> donePapers;
   final List<dynamic> warnings;
+  final Icon icon;
 
   @override
   State<PaperToSubmit> createState() => _PaperToSubmitState();
@@ -40,28 +42,46 @@ class _PaperToSubmitState extends State<PaperToSubmit> {
     List<dynamic> leftoverPapers = widget.leftoverPapers;
     List<dynamic> donePapers = widget.donePapers;
     List<dynamic> warnings = widget.warnings;
+    Icon icon = widget.icon;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: _appBar(context, leftoverPapers, donePapers),
+      backgroundColor: AppColors.white,
+      appBar: _appBar(context, leftoverPapers, donePapers, icon),
       body: _body(context, leftoverPapers, donePapers, warnings),
       floatingActionButton: _floatingActionButton(context, leftoverPapers, donePapers),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  AppBar _appBar(BuildContext context, List<dynamic> leftoverPapers, List<dynamic> donePapers) {
+  AppBar _appBar(BuildContext context, List<dynamic> leftoverPapers, List<dynamic> donePapers, Icon icon) {
     return AppBar(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
-      leading: GestureDetector(
-        onTap: () async {
-          await _updateAndReplace(leftoverPapers, donePapers);
-        },
-        child: Icon(Icons.arrow_back_ios_new_rounded),
-      ),
-      title: Text('제출 해야 할 서류'),
       automaticallyImplyLeading: false,
+      title: Stack(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () async {
+                await _updateAndReplace(leftoverPapers, donePapers);
+              },
+              child: Icon(Icons.arrow_back_ios_new_rounded),
+            ),
+          ),
+          Align(
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                icon,
+                const SizedBox(width: 10),
+                Text('제출 해야 할 서류'),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -223,7 +243,7 @@ class _PaperToSubmitState extends State<PaperToSubmit> {
       onPressed: () async {
         await _updateAndReplace(leftoverPapers, donePapers);
       },
-      child: Text('글 쓰기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      child: Text('확인 완료', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
       style: ButtonStyle(
         padding: WidgetStateProperty.resolveWith((states) {
           return EdgeInsets.symmetric(horizontal: 30);
@@ -233,7 +253,7 @@ class _PaperToSubmitState extends State<PaperToSubmit> {
           return Colors.black.withOpacity(0.8);
         }),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
-          return AppColors.keyColor;
+          return AppColors.secondBackgroundColor;
         }),
         overlayColor: WidgetStateProperty.resolveWith((states) {
           return Colors.grey.withOpacity(0.1);

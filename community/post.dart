@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../main.dart';
 import 'chat.dart';
 import 'edit_post.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class Post extends StatefulWidget {
   const Post({super.key,
@@ -172,7 +172,7 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.white,
           title: Text('두 번은 너무 과해 :)'),
           actions: [
             TextButton(
@@ -193,7 +193,7 @@ class _PostState extends State<Post> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       appBar: _appBar(),
       body: SafeArea(
         child: Column(
@@ -207,7 +207,7 @@ class _PostState extends State<Post> {
                   children: [
                     _postSection(), // Post
                     _isFetching
-                    ? Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor))
+                    ? Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.white))
                     : _commentsSection(), // Comments
                     //: Container(width: 10, height: 10, color: Colors.pink,),
                   ],
@@ -228,9 +228,9 @@ class _PostState extends State<Post> {
     User? currentUser = FirebaseAuth.instance.currentUser;
 
     return AppBar(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
-      title: Text('커뮤니티'),
+      title: const Text('커뮤니티'),
       titleSpacing: 0,
       centerTitle: false,
       actions: [
@@ -259,11 +259,11 @@ class _PostState extends State<Post> {
                 });
               }
             },
-            icon: Icon(Icons.edit, color: Colors.black),
+            icon: const Icon(Icons.edit, color: Colors.black),
           ),
           IconButton(
             onPressed: () {_showDeleteConfirmationDialog();},
-            icon: Icon(Icons.delete_forever, color: Colors.black),
+            icon: const Icon(Icons.delete_forever, color: Colors.black),
           ),
         ],
         if(currentUser != null && currentUser.uid != widget.userId)...[
@@ -277,21 +277,21 @@ class _PostState extends State<Post> {
                 starterId: currentUser.uid,
               )));
             },
-            icon: Icon(Icons.chat, color: Colors.black),
+            icon: const Icon(Icons.chat, color: Colors.black),
           ),
           IconButton(
             onPressed: () {
               _showReportDialog(context);
             },
-            icon: Icon(Icons.report, color: Colors.black),
+            icon: const Icon(Icons.report, color: Colors.black),
           ),
           IconButton(
             onPressed: () {
               _showBlockDialog(context);
             },
-            icon: Icon(Icons.block, color: Colors.black),
+            icon: const Icon(Icons.block, color: Colors.black),
           ),
-          SizedBox(width: 15),
+          const SizedBox(width: 15),
         ]
       ],
     );
@@ -302,7 +302,7 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-            backgroundColor: AppColors.backgroundColor,
+            backgroundColor: AppColors.white,
             title: Text("게시글 삭제"),
             content: Text("게시글을 삭제하시겠습니까?"),
             actions: [
@@ -360,7 +360,7 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.white,
           title: Text('게시글 신고하기'),
           content: Text(
             '게시글을 신고하시겠습니까?'
@@ -421,7 +421,7 @@ class _PostState extends State<Post> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundColor,
+          backgroundColor: AppColors.white,
           title: Text('사용자 차단하기'),
           content: Text(
             '사용자를 차단하시겠습니까?'
@@ -566,7 +566,7 @@ class _PostState extends State<Post> {
       future: _reactionsFuture,
       builder: (context, snapshot) {
         if(snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor));
+          return Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.white));
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else if (snapshot.hasData){
@@ -645,7 +645,7 @@ class _PostState extends State<Post> {
       future: _reactionsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.backgroundColor));
+          return Center(child: CircularProgressIndicator(color: AppColors.keyColor, backgroundColor: AppColors.white));
         } else if (snapshot.hasError) {
           return Text('Error loading replies: ${snapshot.error}');
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {

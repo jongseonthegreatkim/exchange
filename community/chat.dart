@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
-import '../colors.dart';
+import '../statics.dart';
 
 class Chat extends StatefulWidget {
   const Chat({super.key, required this.isAuthor, required this.postAuthorId, required this.postId, required this.postTitle, required this.starterId});
@@ -65,10 +65,10 @@ class _ChatState extends State<Chat> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: AppColors.white,
         scrolledUnderElevation: 0,
         title: Text('${widget.postTitle}'),
         titleSpacing: 0,

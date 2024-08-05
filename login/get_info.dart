@@ -2,8 +2,10 @@ import 'package:exchange/login/login.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // To save username, university in firestore.
+
 import '../main.dart';
-import '../colors.dart';
+import '../statics.dart';
+import 'nation_select.dart';
 
 class GetInfo extends StatefulWidget {
   final User user; // Pass the Firebase user to this screen
@@ -29,122 +31,103 @@ class _GetInfoState extends State<GetInfo> {
     });
   }
 
-  Future<void> _saveAndSetKeyColorToFirestore(String university) async {
-    try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('universities').doc(university).get();
-
-      if(doc.exists && doc['색상'] != null) {
-        String colorString = doc['색상'];
-
-        await FirebaseFirestore.instance.collection('users').doc(widget.user.uid).update({
-          '색상' : colorString,
-        });
-
-        Color universityKeyColor = Color(int.parse(colorString.replaceFirst('#', '0xFF')));
-
-        AppColors.keyColor = universityKeyColor;
-      } else {
-        print('document for univeristy or color of univeristy does not exists');
-      }
-    } catch (e) {
-      print('key color change failed with error: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => Login(),
-              ),
-            );
-          },
-          icon: Icon(Icons.arrow_back),
-        ),
+      appBar: _appBar(context),
+      body: _body(context),
+    );
+  }
+
+  AppBar _appBar(BuildContext context) {
+    return AppBar(
+      backgroundColor: AppColors.white,
+      scrolledUnderElevation: 0,
+      leading: IconButton(
+        onPressed: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Login(),
+            ),
+          );
+        },
+        icon: Icon(Icons.arrow_back),
       ),
-      body: Container(
-        color: AppColors.backgroundColor,
-        padding: EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Column(
-                children: [
-                  // username 적는 필드
-                  TextFormField(
-                    controller: _usernameController,
-                    onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
-                    decoration: InputDecoration(
-                      hintText: "아이디를 입력해주세요",
-                      isDense: true,
-                      border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.keyColor)),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "아이디는 입력 해주셔야 해요ㅜ";
-                      }
-                      return null;
-                    },
+    );
+  }
+
+  Widget _body(BuildContext context) {
+    return Container(
+      color: AppColors.white,
+      padding: EdgeInsets.all(15),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Column(
+              children: [
+                // username 적는 필드
+                TextFormField(
+                  controller: _usernameController,
+                  onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
+                  decoration: InputDecoration(
+                    hintText: "아이디를 입력해주세요",
+                    isDense: true,
+                    border: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                    focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.keyColor)),
                   ),
-                  SizedBox(height: 20),
-                  UniversityDropdown(controller: _universityController), // university 선택하는 필드
-                ],
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final username = _usernameController.text;
-                    final university = _universityController.text;
-
-                    // Save the user information to Firestore
-                    await _saveUserInfoToFirestore(username, university);
-
-                    // keycolor 기본 값에서 학교별 값으로 변경하는 곳 -> 현재 철회
-                    //await _saveAndSetKeyColorToFirestore(university);
-
-                    // Navigate to the home screen with user info
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Home(
-                          username: username,
-                          university: university,
-                          bottomIndex: 0,
-                        ),
-                      ),
-                    );
-                  }
-                },
-                child: Text("가입하기"),
-                style: ButtonStyle(
-                  padding: WidgetStateProperty.resolveWith((states) {
-                    return EdgeInsets.symmetric(horizontal: 15);
-                  }),
-                  // foregroundColor = TextStyle(color), overlayColor = color when overlayed
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    return Colors.black.withOpacity(0.8);
-                  }),
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    return AppColors.backgroundColor;
-                  }),
-                  overlayColor: WidgetStateProperty.resolveWith((states) {
-                    return Colors.grey.withOpacity(0.1);
-                  }),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "아이디는 입력 해주셔야 해요ㅜ";
+                    }
+                    return null;
+                  },
                 ),
+                SizedBox(height: 20),
+                UniversityDropdown(controller: _universityController), // university 선택하는 필드
+              ],
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_formKey.currentState!.validate()) {
+                  final username = _usernameController.text;
+                  final university = _universityController.text;
+
+                  // Save the user information to Firestore
+                  await _saveUserInfoToFirestore(username, university);
+
+                  // 교환희망 국가 선택하는 페이지로 보내기
+                  Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                      NationSelect(
+                        username: username,
+                        university: university,
+                        from: 'get_info',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text("가입하기"),
+              style: ButtonStyle(
+                padding: WidgetStateProperty.resolveWith((states) {
+                  return EdgeInsets.symmetric(horizontal: 15);
+                }),
+                // foregroundColor = TextStyle(color), overlayColor = color when overlayed
+                foregroundColor: WidgetStateProperty.resolveWith((states) {
+                  return Colors.black.withOpacity(0.8);
+                }),
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  return AppColors.white;
+                }),
+                overlayColor: WidgetStateProperty.resolveWith((states) {
+                  return Colors.grey.withOpacity(0.1);
+                }),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -273,7 +256,7 @@ class _UniversityDropdownState extends State<UniversityDropdown> {
         if (isLoading)...[
           Center(child: CircularProgressIndicator(
             color: AppColors.keyColor,
-            backgroundColor: AppColors.backgroundColor,
+            backgroundColor: AppColors.white,
           )),
         ]
       ],

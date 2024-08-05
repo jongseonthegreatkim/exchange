@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // For user authentication
-import '../colors.dart';
+import '../statics.dart';
 
 class PostSubmissionScreen extends StatefulWidget {
   const PostSubmissionScreen({super.key, required this.onPostCreated});
@@ -44,9 +44,9 @@ class _PostSubmissionScreenState extends State<PostSubmissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: AppColors.white,
         scrolledUnderElevation: 0,
         title: Text('새 글 쓰기'),
         centerTitle: true,

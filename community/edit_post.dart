@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../colors.dart';
+import '../statics.dart';
 
 class EditPost extends StatefulWidget {
   const EditPost({super.key, required this.title, required this.content, required this.documentId, required this.onPostFixed});
@@ -25,9 +25,9 @@ class _EditPostState extends State<EditPost> {
     TextEditingController _contentController = TextEditingController(text: widget.content);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
+        backgroundColor: AppColors.white,
         scrolledUnderElevation: 0, // Disable light background color when we scroll body upward
         title: Text('게시글 수정'),
         titleSpacing: 0, // To make title to stay at the middle
@@ -39,7 +39,7 @@ class _EditPostState extends State<EditPost> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: AppColors.backgroundColor,
+                color: AppColors.white,
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(color: AppColors.keyColor, width: 1),
               ),
