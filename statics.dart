@@ -57,7 +57,7 @@ class AppButtonStyle {
 
   static ButtonStyle changedButtonStyle = ButtonStyle(
     padding: WidgetStateProperty.resolveWith((states) {
-      return const EdgeInsets.fromLTRB(15, 10, 20, 10);
+      return const EdgeInsets.fromLTRB(15, 10, 15, 10);
     }),
     backgroundColor: WidgetStateProperty.resolveWith((states) {
       return AppColors.white;

@@ -55,7 +55,6 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-
   // fetchNations에 해당하는 Future
   late Future<void> nationsFuture;
 
@@ -93,6 +92,7 @@ class _ProfileState extends State<Profile> {
       },
     );
   }
+
   Widget _profileCard() {
     return Container(
       width: double.infinity,
@@ -138,7 +138,7 @@ class _ProfileState extends State<Profile> {
               children: [
                 Flexible(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 10),
+                    padding: EdgeInsets.fromLTRB(0, 10, 10, 10),
                     child: FittedBox(
                       child: Text('아직 희망국가 선택을 하지 않았어요', style: TextStyle(fontSize: 16)),
                     ),
@@ -220,7 +220,7 @@ class _ProfileState extends State<Profile> {
             children: [
               Flexible(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10),
+                  padding: EdgeInsets.fromLTRB(0, 10, 10, 10),
                   child: Text(printingSelectedNations, style: TextStyle(fontSize: 16)),
                 ),
               ),

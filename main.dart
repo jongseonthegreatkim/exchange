@@ -81,6 +81,7 @@ class ExchangeStudentApp extends StatelessWidget {
       theme: ThemeData(
         // Set a base font to 'Pretendard'
         fontFamily: 'Pretendard',
+        //fontFamily: 'AppleSDGothicNeo',
       ),
       home: FutureBuilder(
         // Get the current user state
@@ -318,22 +319,10 @@ class _HomeState extends State<Home> {
     List<Widget> _appBarActions = [];
 
     if(_currentIndex == 0) {
-      /*
-      _appBarLeading = Padding(
-        padding: EdgeInsets.only(left: 15),
-        child: Image.asset('assets/images/vector_five.png', width: 30, height: 30),
-      );
-      */
       _appBarLeading = null;
       _appBarTitle = Row(
         children: [
-          Text('대학', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            //child: Image.asset('assets/images/vector_five.png', width: 23, height: 23),
-            child: Image.asset('assets/images/logo_info_screen.png', width: 25, height: 25),
-          ),
-          Text('교환', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700)),
+          Image.asset('assets/images/logo_info_screen_2.png', width: 30, height: 30),
         ],
       );
       _appBarActions = [
@@ -424,13 +413,15 @@ class _HomeState extends State<Home> {
 
     return AppBar(
       backgroundColor: AppColors.white,
-      scrolledUnderElevation: 0, // Disable light background color when we scroll body upward.
       automaticallyImplyLeading: false,
       leading: _appBarLeading,
       title: _appBarTitle,
       titleSpacing: _currentIndex == 0 ? 15 : 0,
       centerTitle: false,
-      actions: _appBarActions
+      actions: _appBarActions,
+      // 스크롤 내렸을 때 그림자의 색상 & 배경의 색상. 이것 때문에 scrollUnderElevation을 0으로 설정한 라인을 지웠다.
+      shadowColor: Colors.grey.withOpacity(0.5),
+      surfaceTintColor: AppColors.white,
     );
   }
 

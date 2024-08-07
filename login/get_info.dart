@@ -135,11 +135,17 @@ class _GetInfoState extends State<GetInfo> {
 }
 
 Future<List<String>> fetchUniversityKeys() async {
+  // Firestore에서 대학 목록을 가져옴
+  final DocumentSnapshot doc = await FirebaseFirestore.instance
+      .collection('universities')
+      .doc('names of universities')
+      .get();
 
-  final DocumentSnapshot doc = await FirebaseFirestore.instance.collection('universities').doc('names of universities').get();
-  final data = doc.data() as Map<String, dynamic>; // String: field name, dynamic: field value (all type possible)
+  // String: field name, dynamic: field value (all type possible)
+  final data = doc.data() as Map<String, dynamic>;
 
-  return data.keys.cast<String>().toList();
+  // 가져온 대학 목록을 alphabetical order로 정렬함 (by ..sort())
+  return data.keys.cast<String>().toList()..sort();
 }
 
 class UniversityDropdown extends StatefulWidget {

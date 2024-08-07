@@ -95,14 +95,14 @@ class _InfoState extends State<Info> {
         children: [
           Text(
             widget.university,
-            style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Colors.black),
+            style: AppTextStyle.titleTextStyle,
           ),
           SizedBox(height: 6),
           Text(
             '현재 ${widget.university}의 남은 일정이 없습니다!',
-            style: TextStyle(fontSize: 18, color: Colors.black),
+            style: AppTextStyle.subtitleTextStyle
           ),
-          SizedBox(height: 30),
+          SizedBox(height: AppNumbers.infoInterSectionMargin),
         ],
       );
     }
@@ -143,7 +143,7 @@ class _InfoState extends State<Info> {
       children: [
         Text(
           widget.university,
-          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, color: Colors.black),
+          style: AppTextStyle.titleTextStyle,
         ),
         SizedBox(height: 6),
         FittedBox(
@@ -152,15 +152,17 @@ class _InfoState extends State<Info> {
               children: [
                 TextSpan(
                   text: '$latestKey까지 ',
-                  style: TextStyle(color: Colors.black, fontSize: 17),
+                  style: AppTextStyle.subtitleTextStyle,
                 ),
                 TextSpan(
                   text: displayingLeftoverTime,
-                  style: TextStyle(color: Color(0xFFCC0000), fontSize: 17, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.red, fontSize: 15, fontWeight: FontWeight.w700,
+                  ),
                 ),
                 TextSpan(
                   text: "남았어요!",
-                  style: TextStyle(color: Colors.black, fontSize: 17),
+                  style: AppTextStyle.subtitleTextStyle,
                 ),
               ],
             ),
@@ -168,7 +170,7 @@ class _InfoState extends State<Info> {
         ),
         SizedBox(height: 10),
         SizedBox(
-          height: 126,
+          height: 101,
           child: ListView(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
@@ -177,46 +179,47 @@ class _InfoState extends State<Info> {
                 bool _isFirst = false;
                 if(entry.key == latestKey)
                   _isFirst = true;
-                return _buildScheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), '캘린더에 추가', _isFirst);
+                return _buildScheduleCard(entry.key, DateFormat('yyyy년 MM월 dd일').format(entry.value), _isFirst);
               }),
             ],
           ),
         ),
-        SizedBox(height: 30),
+        SizedBox(height: AppNumbers.infoInterSectionMargin),
       ],
     );
   }
-  Widget _buildScheduleCard(String title, String date, String calendar, bool _isFirst) {
-
-    final Color _backgroundColor;
-    _isFirst == true ? _backgroundColor = AppColors.backgroundColor : _backgroundColor = AppColors.white;
+  Widget _buildScheduleCard(String title, String date, bool _isFirst) {
+    Color _backgroundColor = _isFirst ? AppColors.backgroundColor : AppColors.white;
+    Color _borderColor = _isFirst ? AppColors.keyColor.withOpacity(0.1) : Colors.grey.withOpacity(0.1);
 
     return Container(
-      margin: EdgeInsets.only(right: 10),
-      padding: EdgeInsets.all(10),
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: 1),
         color: _backgroundColor,
+        border: Border.all(color: _borderColor, width: AppNumbers.borderWidth),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w700),
+            style: AppTextStyle.subtitleTextStyle,
           ),
-          SizedBox(height: 10),
           Text(
             date,
-            style: TextStyle(color: Colors.black, fontSize: 16),
+            style: AppTextStyle.contentTextStyle,
           ),
-          SizedBox(height: 25),
+          const SizedBox(height: 20),
           GestureDetector(
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('기능 준비 중입니다!')));
             },
-            child: Text(calendar, style: TextStyle(fontSize: 15)),
+            child: Text(
+              '캘린더에 추가',
+              style: AppTextStyle.mediumTextStyle,
+            ),
           ),
         ],
       ),
@@ -283,11 +286,11 @@ class _InfoState extends State<Info> {
               ],
             ),
           ),
-          SizedBox(height: 30),
+          SizedBox(height: AppNumbers.infoInterSectionMargin),
         ],
       );
     } else {
-      return Container(); // relatives가 없는 경우 -> 그냥 RelativesSection을 없앤다.
+      return SizedBox(); // relatives가 없는 경우 -> 그냥 RelativesSection을 없앤다.
     }
   }
   Widget _buildRelativesCard(String title, List<dynamic> universities, Map<String, dynamic> relatives) {

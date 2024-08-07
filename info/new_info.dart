@@ -136,7 +136,9 @@ class _NewInfoState extends State<NewInfo> {
           const SizedBox(height: 6),
           Text(
             '현재 ${widget.university}의 남은 일정이 없습니다!',
-            style: const TextStyle(fontSize: 18, color: Colors.black),
+            style: TextStyle(
+              color: Colors.black, fontSize: 15, fontWeight: FontWeight.w500,
+            ),
           ),
           SizedBox(height: AppNumbers.infoInterSectionMargin),
         ],
@@ -188,17 +190,21 @@ class _NewInfoState extends State<NewInfo> {
               children: [
                 TextSpan(
                   text: '$latestKey까지 ',
-                  style: AppTextStyle.subtitleTextStyle,
+                  style: TextStyle(
+                    color: Colors.black, fontSize: 15, fontWeight: FontWeight.w500,
+                  ),
                 ),
                 TextSpan(
                   text: displayingLeftoverTime,
                   style: TextStyle(
-                    color: Colors.red, fontSize: 15, fontWeight: FontWeight.w700,
+                    color: Colors.red, fontSize: 15, fontWeight: FontWeight.w600,
                   ),
                 ),
                 TextSpan(
                   text: "남았어요!",
-                  style: AppTextStyle.subtitleTextStyle,
+                  style: TextStyle(
+                    color: Colors.black, fontSize: 15, fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -206,7 +212,7 @@ class _NewInfoState extends State<NewInfo> {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 120,
+          height: 101,
           child: ListView(
             scrollDirection: Axis.horizontal,
             shrinkWrap: true,
@@ -226,13 +232,14 @@ class _NewInfoState extends State<NewInfo> {
   }
   Widget _scheduleCard(String title, String date, bool _isFirst) {
     Color _backgroundColor = _isFirst ? AppColors.backgroundColor : AppColors.white;
+    Color _borderColor = _isFirst ? AppColors.keyColor.withOpacity(0.1) : Colors.grey.withOpacity(0.1);
 
     return Container(
       margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
         color: _backgroundColor,
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
+        border: Border.all(color: _borderColor, width: AppNumbers.borderWidth),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -242,7 +249,6 @@ class _NewInfoState extends State<NewInfo> {
             title,
             style: AppTextStyle.subtitleTextStyle,
           ),
-          const SizedBox(height: 10),
           Text(
             date,
             style: AppTextStyle.contentTextStyle,
@@ -270,8 +276,8 @@ class _NewInfoState extends State<NewInfo> {
       return const SizedBox();
 
     return Container(
-      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
       width: double.infinity,
+      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
       ),
@@ -298,7 +304,7 @@ class _NewInfoState extends State<NewInfo> {
               (_isFieldExist == true)
                   ? '아직 준비 하지 못한 서류 ${leftoverPapers.length}가지\n다시 확인하기'
                   : '${widget.university} 제출 서류\n1분 만에 확인하기',
-              style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold, height: 1.5),
+              style: AppTextStyle.subtitleTextStyle,
             ),
           ],
         ),
@@ -318,21 +324,22 @@ class _NewInfoState extends State<NewInfo> {
 
     return Container(
       margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      // set bottom padding as zero as _criteriaCard has its own padding.
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.secondBackgroundColor, width: 5),
+        border: Border.all(color: AppColors.secondBackgroundColor, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '${widget.username}님을 위해 준비한 ${_keys.length}가지 꿀팁',
-            style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+            style: AppTextStyle.subtitleTextStyle,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
           ..._keys.map((key) {
             List<dynamic> value = criteria[key];
 
@@ -347,19 +354,19 @@ class _NewInfoState extends State<NewInfo> {
     late String _title;
 
     if(key == '선발기준') {
-      _criteriaIcon = const Icon(Icons.accessibility, color: Color(0xFFD2B19D), size: 30);
+      _criteriaIcon = const Icon(Icons.accessibility, color: Color(0xFFD2B19D), size: 20);
       _title = '선발기준 알아보기';
     }
     if(key == '지원서 작성방법') {
-      _criteriaIcon = const Icon(Icons.newspaper, color: Color(0xFF565151), size: 30);
+      _criteriaIcon = const Icon(Icons.newspaper, color: Color(0xFF565151), size: 20);
       _title = '지원서 작성하는 방법';
     }
     if(key == '지원조건') {
-      _criteriaIcon = const Icon(Icons.account_box_rounded, color: Color(0xFF9BA0D7), size: 30);
+      _criteriaIcon = const Icon(Icons.account_box_rounded, color: Color(0xFF9BA0D7), size: 20);
       _title = '지원조건 체크하기';
     }
     if(key == '주의사항') {
-      _criteriaIcon = const Icon(Icons.warning, color: Color(0xFFD73F3F), size: 30);
+      _criteriaIcon = const Icon(Icons.warning, color: Color(0xFFD73F3F), size: 20);
       _title = '지원 시 주의사항은?';
     }
 
@@ -372,18 +379,18 @@ class _NewInfoState extends State<NewInfo> {
         )));
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
         width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
             _criteriaIcon,
-            const SizedBox(width: 15),
+            const SizedBox(width: 10),
             Text(
               _title,
-              style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w500),
+              style: AppTextStyle.mediumTextStyle,
             ),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 20),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey, size: 15),
           ],
         ),
       ),
@@ -397,12 +404,16 @@ class _NewInfoState extends State<NewInfo> {
     if(changed == null)
       return const SizedBox();
 
+    // 느낌표 이미지
+    Image exclamationMark = Image.asset('assets/images/exclamation_mark.png', color: AppColors.keyColor, width: 20, height: 25);
+
+
     return Container(
-      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
       width: double.infinity,
+      margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
+        border: Border.all(color: Colors.grey.withOpacity(0.3), width: AppNumbers.borderWidth),
       ),
       child: ElevatedButton(
         onPressed: () {
@@ -410,17 +421,17 @@ class _NewInfoState extends State<NewInfo> {
             context,
             MaterialPageRoute(builder: (context) => ChangedThings(
               changed: changed,
-              icon: Image.asset('assets/images/exclamation_mark.png', color: AppColors.keyColor, width: 30, height: 30),
+              icon: exclamationMark,
             )),
           );
         },
         child: Row(
           children: [
-            Image.asset('assets/images/exclamation_mark.png', color: AppColors.keyColor, width: 30, height: 30),
-            const SizedBox(width: 10),
+            exclamationMark,
+            const SizedBox(width: 13),
             Text(
               '${widget.university}에서\n올해 처음 바뀐 기준 ${changed.length}가지',
-              style: const TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.bold, height: 1.5),
+              style: AppTextStyle.subtitleTextStyle,
             ),
             Spacer(),
             Container(
@@ -431,7 +442,7 @@ class _NewInfoState extends State<NewInfo> {
               ),
               child: Text(
                 '확인하기',
-                style: const TextStyle(color: Colors.black, fontSize: 15),
+                style: AppTextStyle.mediumTextStyle,
               ),
             ),
           ],
@@ -451,12 +462,12 @@ class _NewInfoState extends State<NewInfo> {
 
     return Container(
       margin: EdgeInsets.only(bottom: AppNumbers.infoInterSectionMargin),
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
+        border: Border.all(color: Colors.grey.withOpacity(0.3), width: AppNumbers.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,23 +475,25 @@ class _NewInfoState extends State<NewInfo> {
         children: [
           Container(
             height: 30,
-            child: ElevatedButton(
-              onPressed: () {
-                // 지원 가능 대학 목록 전체 보기
-                Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
-                  relatives: relatives,
-                  areas: areas,
-                )));
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '상대교 국제처 링크 모음',
-                    style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '상대교 국제처 링크 모음',
+                  style: AppTextStyle.subtitleTextStyle,
+                ),
+                GestureDetector(
+                  onTap: () {
+                    // 지원 가능 대학 목록 전체 보기
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => FullRelatives(
+                      relatives: relatives,
+                      areas: areas,
+                    )));
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(top: 2),
+                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                     decoration: BoxDecoration(
                       color: AppColors.secondBackgroundColor.withOpacity(0.75),
                       borderRadius: BorderRadius.circular(5),
@@ -488,18 +501,17 @@ class _NewInfoState extends State<NewInfo> {
                     child: Center(
                       child: Text(
                         '전체보기',
-                        style: TextStyle(color: Colors.black, fontSize: 15),
+                        style: AppTextStyle.mediumTextStyle,
                       ),
                     ),
                   ),
-                ],
-              ),
-              style: AppButtonStyle.buttonStyle,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
           Container(
-            height: 110,
+            height: 94,
             child: ListView(
               scrollDirection: Axis.horizontal,
               shrinkWrap: true,
@@ -524,7 +536,7 @@ class _NewInfoState extends State<NewInfo> {
   }
   Widget _relativesCard(String title, List<dynamic> universities, Map<String, dynamic> relatives) {
     return Container(
-      width: 150,
+      width: 140,
       margin: const EdgeInsets.only(right: 10),
       color: AppColors.white,
       child: Column(
@@ -533,7 +545,7 @@ class _NewInfoState extends State<NewInfo> {
         children: [
           Text(
             '$title 대학',
-            style: TextStyle(color: Colors.black, fontSize: 17, fontWeight: FontWeight.w500),
+            style: AppTextStyle.mediumTextStyle,
           ),
           const SizedBox(height: 8),
           ...universities.map((university) =>
@@ -541,14 +553,16 @@ class _NewInfoState extends State<NewInfo> {
               children: [
                 GestureDetector(
                   onTap: () {
-
+                    /// 해당 대학으로 넘어가는 함수.
                   },
                   child: Text(
                     university,
-                    style: const TextStyle(color: Colors.black, fontSize: 15, overflow: TextOverflow.ellipsis),
+                    style: const TextStyle(color: Color(0xFF9A9A9A), fontSize: 13, fontWeight: FontWeight.w600, overflow: TextOverflow.ellipsis),
                   ),
                 ),
-                const SizedBox(height: 5),
+                if(universities.indexOf(university) != universities.length-1)...[
+                  const SizedBox(height: 5),
+                ]
               ],
             ),
           ),
@@ -579,27 +593,27 @@ class _NewInfoState extends State<NewInfo> {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withOpacity(0.5), width: AppNumbers.borderWidth),
+        border: Border.all(color: Colors.grey.withOpacity(0.3), width: AppNumbers.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '담당부서 정보',
-            style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.w600),
+            style: AppTextStyle.subtitleTextStyle,
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 10),
           ListView.separated(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
             itemCount: contactContent.length,
             itemBuilder: (context, index) {
               return Container(
-                height: 30,
+                height: 20,
                 child: ElevatedButton(
                   onPressed: () async {
                     await _contactOnTap(contactType[index], contactContent[index]);
@@ -617,8 +631,8 @@ class _NewInfoState extends State<NewInfo> {
                             '${contactContent[index]}',
                             style: TextStyle(
                               color: (contactType[index] == '전화번호') ? Colors.green : ((contactType[index] == '이메일') ? Colors.grey : Colors.black),
-                              fontSize: 17,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -630,7 +644,7 @@ class _NewInfoState extends State<NewInfo> {
               );
             },
             separatorBuilder: (context, index) {
-              return const SizedBox(height: 5);
+              return const SizedBox(height: 7);
             },
           ),
         ],

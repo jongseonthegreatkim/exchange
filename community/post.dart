@@ -514,7 +514,7 @@ class _PostState extends State<Post> {
                 onTap: _incrementLikes,
                 child: Row(
                   children: [
-                    Icon(Icons.thumb_up, size: 15, color: Color(0xFFF92015)),
+                    Icon(Icons.thumb_up, size: 15, color: Color(0xFFF92015).withOpacity(0.5)),
                     SizedBox(width: 5),
                     FutureBuilder<int>(
                       future: _likesFuture,
@@ -524,7 +524,7 @@ class _PostState extends State<Post> {
                         } else if(snapshot.hasError) {
                           return Text('Error: ${snapshot.error}');
                         } else {
-                          return Text('${snapshot.data}', style: TextStyle(fontSize: 15, color: Color(0xFFF92015)));
+                          return Text('${snapshot.data}', style: TextStyle(fontSize: 15, color: Color(0xFFF92015).withOpacity(0.5)));
                         }
                       },
                     ),
@@ -544,9 +544,9 @@ class _PostState extends State<Post> {
                     int reactionsCount = snapshot.data?.length ?? 0;
                     return Row(
                       children: [
-                        Icon(Icons.comment, size: 15, color: Color(0xFF07BCBC)),
+                        Icon(Icons.comment, size: 15, color: Color(0xFF07BCBC).withOpacity(0.5)),
                         SizedBox(width: 5),
-                        Text('$reactionsCount', style: TextStyle(fontSize: 15, color: Color(0xFF07BCBC))),
+                        Text('$reactionsCount', style: TextStyle(fontSize: 15, color: Color(0xFF07BCBC).withOpacity(0.5))),
                       ],
                     );
                   }

@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../main.dart';
-import '../profile/profile.dart';
 import '../statics.dart';
 
 class NationSelect extends StatefulWidget {
@@ -28,38 +27,56 @@ class _NationSelectState extends State<NationSelect> {
 
   // 국기 주소 & 국가명 데이터를 Firestore에서 받아와서 위 두 리스트에 저장
   Future<void> fetchImageAndNationAndBool() async {
-    // Firestore의 collection에 접근
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('nations')
-        .get();
 
-    // 하나하나의 document마다 imageAddress와 nationText를 가져와 _imagesAddressList, _nationsTextList에 집어넣는다
-    for(var doc in querySnapshot.docs) {
-      Map<String, dynamic> image = doc.data() as Map<String, dynamic>;
-      String imageAddress = image['image'];
-      String nationText = doc.id;
-      _imageAddressList.add(imageAddress);
-      _nationTextList.add(nationText);
-    }
+    print('fetchIANAB start');
 
-    // 선택한 국가는 다른 디자인으로 보여주기 위한 boolean 값 리스트.
-    if(widget.selectedNations == null) {
-      // selectedNations를 넘겨주지 않았다면, 즉, (get_info 혹은 profile의 '희망국가 선택하기')에서 접근했다면, 모두 false로 채운다
-      _isCheckedList = List<bool>.filled(querySnapshot.docs.length, false);
-    } else {
-      // selectedNations를 넘겨줬다면, 'profile'의 '희망국가 변경하기'에서 접근한 경우
-      _isCheckedList = List<bool>.filled(querySnapshot.docs.length, false);
-      for(int index=0; index<_nationTextList.length; index++) {
-        if(widget.selectedNations!.contains(_nationTextList[index])) {
-          _isCheckedList[index] = true;
+    try {
+      // Firestore의 collection에 접근
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('nations')
+          .orderBy('ratio', descending: false) // 교환 많이가는 순서대로 정렬
+          .get();
+
+      // 하나하나의 document마다 imageAddress와 nationText를 가져와 _imagesAddressList, _nationsTextList에 집어넣는다
+      for(var doc in querySnapshot.docs) {
+        Map<String, dynamic> image = doc.data() as Map<String, dynamic>;
+        String imageAddress = image['image'];
+        String nationText = doc.id;
+        _imageAddressList.add(imageAddress);
+        _nationTextList.add(nationText);
+
+        print('fetching _imageAddress and _nationText');
+        print('_imageAddressList: $_imageAddressList');
+        print('_nationTextList: $_nationTextList');
+
+      }
+
+      print('_imageAddressList: $_imageAddressList');
+      print('_nationTextList: $_nationTextList');
+
+      // 선택한 국가는 다른 디자인으로 보여주기 위한 boolean 값 리스트.
+      if(widget.selectedNations == null) {
+        // selectedNations를 넘겨주지 않았다면, 즉, (get_info 혹은 profile의 '희망국가 선택하기')에서 접근했다면, 모두 false로 채운다
+        _isCheckedList = List<bool>.filled(querySnapshot.docs.length, false);
+      } else {
+        // selectedNations를 넘겨줬다면, 'profile'의 '희망국가 변경하기'에서 접근한 경우
+        _isCheckedList = List<bool>.filled(querySnapshot.docs.length, false);
+        for(int index=0; index<_nationTextList.length; index++) {
+          if(widget.selectedNations!.contains(_nationTextList[index])) {
+            _isCheckedList[index] = true;
+          }
         }
       }
+
+      print('_isCheckedList: $_isCheckedList');
+
+      // 그림 다시 그리기 -> 이래야 _isCheckedList에 true가 존재함을 인식해서 bottomSheet의 색상을 바꿔줄 수 있음.
+      setState(() {
+
+      });
+    } catch (e) {
+      print('fetching image and nation and bool faced Error: $e');
     }
-
-    // 그림 다시 그리기 -> 이래야 _isCheckedList에 true가 존재함을 인식해서 bottomSheet의 색상을 바꿔줄 수 있음.
-    setState(() {
-
-    });
   }
 
   // fetchImageAndNationAndBool에 대응하는 late future.
@@ -209,6 +226,7 @@ class _NationSelectState extends State<NationSelect> {
                         },
                         child: Container(
                           margin: EdgeInsets.all(10),
+                          padding: EdgeInsets.fromLTRB(11, 5, 11, 0),
                           decoration: BoxDecoration(
                             color: _backgroundColor,
                             borderRadius: BorderRadius.circular(1000),
@@ -217,7 +235,8 @@ class _NationSelectState extends State<NationSelect> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Image.asset(_imageAddress.toString(), width: 30, height: 30),
+                              Image.asset(_imageAddress.toString(), width: 40, height: 25),
+                              const SizedBox(height: 3),
                               FittedBox(
                                 child: Text(
                                   _nationText,
@@ -235,6 +254,8 @@ class _NationSelectState extends State<NationSelect> {
                 }
               }
             ),
+            // _bottmSheet 높이의 SizedBox를 만들어서, 가리는 부분이 없게 함.
+            const SizedBox(height: 130),
           ],
         ),
       ),

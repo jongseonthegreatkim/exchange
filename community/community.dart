@@ -290,7 +290,7 @@ class _CommunityState extends State<Community> {
             return Colors.black.withOpacity(0.8);
           }),
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return AppColors.keyColor;
+            return AppColors.secondBackgroundColor;
           }),
           overlayColor: WidgetStateProperty.resolveWith((states) {
             return Colors.grey.withOpacity(0.1);
@@ -346,47 +346,48 @@ class _CommunityState extends State<Community> {
             // 제목 & 내용
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                overflow: TextOverflow.ellipsis,
-              ),
+              style: AppTextStyle.subtitleTextStyle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
+            const SizedBox(height: 5),
             Text(
               content,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
-                overflow: TextOverflow.ellipsis
-              ),
+              style: AppTextStyle.mediumTextStyle,
               maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 5),
             // 익명 & 시간
             Row(
               children: [
-                Text(_formatTimestamp(timestamp), style: TextStyle(fontSize: 14, color: Colors.black38)),
+                Text(
+                  _formatTimestamp(timestamp),
+                  style: AppTextStyle.contentTextStyle,
+                ),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 5),
                   width: 0.5,
                   height: 10,
-                  color: Colors.black38,
+                  color: Color(0xFF9A9A9A),
                 ),
-                const Text('익명', style: TextStyle(fontSize: 14, color: Colors.black38, overflow: TextOverflow.ellipsis)),
+                Text(
+                  '익명',
+                  style: AppTextStyle.contentTextStyle,
+                ),
               ],
             ),
             const SizedBox(height: 5),
             // 좋아요 & 댓글
             Row(
               children: [
-                const Icon(Icons.thumb_up, size: 14, color: Color(0xFFF92015)),
+                Icon(Icons.thumb_up, size: 14, color: Color(0xFFF92015).withOpacity(0.5)),
                 const SizedBox(width: 5),
-                Text('$likesCount', style: TextStyle(fontSize: 14, color: Color(0xFFF92015))),
+                Text('$likesCount', style: TextStyle(fontSize: 14, color: Color(0xFFF92015).withOpacity(0.5))),
                 const SizedBox(width: 10),
-                const Icon(Icons.comment, size: 14, color: Color(0xFF07BCBC)),
+                Icon(Icons.comment, size: 14, color: Color(0xFF07BCBC).withOpacity(0.5)),
                 const SizedBox(width: 5),
-                Text('$reactionsCount', style: TextStyle(fontSize: 14, color: Color(0xFF07BCBC))),
+                Text('$reactionsCount', style: TextStyle(fontSize: 14, color: Color(0xFF07BCBC).withOpacity(0.5))),
               ],
             ),
           ],
